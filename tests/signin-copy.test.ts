@@ -7,8 +7,8 @@ import {
   SIGNIN_HEADLINE,
   STREAM_WORDS,
   STREAMER_INITIAL,
-  STREAMER_SETTLED,
   allSigninCopy,
+  jumpToNextWord,
   nextStreamerState,
   streamerDelayMs,
   streamerVisible,
@@ -18,10 +18,10 @@ test("unsigned login keeps one short line around a keep/cut/pause streamer", () 
   const blob = allSigninCopy()
   assert.equal(SIGNIN_HEADLINE, "Sign in to your stack")
   assert.deepEqual([...STREAM_WORDS], ["keep", "cut", "pause"])
-  assert.equal(STREAMER_SETTLED, "keep / cut / pause")
   assert.ok(SIGNIN_CONTEXT.length < 80)
   assert.match(SIGNIN_CONTEXT, /AI and dev tools/i)
-  assert.ok(blob.split("\n").length <= 8)
+  assert.doesNotMatch(blob, /keep \/ cut \/ pause/)
+  assert.ok(blob.split("\n").length <= 6)
   assert.doesNotMatch(blob, /Plaid/)
   assert.doesNotMatch(blob, /LinkedIn/)
   assert.doesNotMatch(blob, /Gmail/)
@@ -30,7 +30,7 @@ test("unsigned login keeps one short line around a keep/cut/pause streamer", () 
   }
 })
 
-test("streamer types keep, holds, deletes, then cut, then pause", () => {
+test("streamer types keep, cut, pause, then loops back to keep", () => {
   let state = STREAMER_INITIAL
   assert.equal(streamerVisible(state), "")
 
@@ -38,11 +38,8 @@ test("streamer types keep, holds, deletes, then cut, then pause", () => {
     state = nextStreamerState(state)
     assert.equal(streamerVisible(state), expected)
   }
-  assert.equal(state.phase, "typing")
   state = nextStreamerState(state)
   assert.equal(state.phase, "holding")
-  assert.equal(streamerVisible(state), "keep")
-
   state = nextStreamerState(state)
   assert.equal(state.phase, "deleting")
   for (const expected of ["kee", "ke", "k", ""]) {
@@ -51,7 +48,6 @@ test("streamer types keep, holds, deletes, then cut, then pause", () => {
   }
 
   state = nextStreamerState(state)
-  assert.equal(state.phase, "typing")
   for (const expected of ["c", "cu", "cut"]) {
     state = nextStreamerState(state)
     assert.equal(streamerVisible(state), expected)
@@ -70,17 +66,25 @@ test("streamer types keep, holds, deletes, then cut, then pause", () => {
   state = nextStreamerState(state)
   assert.equal(state.phase, "holding")
   state = nextStreamerState(state)
-  assert.equal(state.phase, "settled")
-  assert.equal(streamerVisible(state), "keep / cut / pause")
-  assert.equal(nextStreamerState(state).phase, "settled")
-  assert.equal(streamerVisible(nextStreamerState(state)), STREAMER_SETTLED)
+  assert.equal(state.phase, "deleting")
+  while (streamerVisible(state) !== "") {
+    state = nextStreamerState(state)
+  }
+  state = nextStreamerState(state)
+  assert.equal(state.phase, "typing")
+  assert.equal(state.wordIndex, 0)
+  state = nextStreamerState(state)
+  assert.equal(streamerVisible(state), "k")
+  assert.notEqual(streamerVisible(state), "keep / cut / pause")
 })
 
-test("streamer delays are slow and it does not loop", () => {
+test("streamer delays stay slow and reduced-motion still loops words", () => {
   assert.ok(streamerDelayMs({ wordIndex: 0, charCount: 1, phase: "typing" }) >= 180)
   assert.ok(streamerDelayMs({ wordIndex: 0, charCount: 4, phase: "holding" }) >= 2400)
   assert.ok(streamerDelayMs({ wordIndex: 0, charCount: 2, phase: "deleting" }) >= 90)
-  assert.equal(streamerDelayMs({ wordIndex: 2, charCount: 0, phase: "settled" }), 0)
+  const hopped = jumpToNextWord({ wordIndex: 2, charCount: 5, phase: "holding" })
+  assert.equal(hopped.wordIndex, 0)
+  assert.equal(streamerVisible(hopped), "keep")
 })
 
 test("unsigned copy never includes the founder seed notebook", () => {

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import {
   STREAM_WORDS,
   STREAMER_INITIAL,
-  STREAMER_SETTLED_STATE,
+  jumpToNextWord,
   nextStreamerState,
   streamerDelayMs,
   streamerVisible,
@@ -18,42 +18,45 @@ function prefersReducedMotion() {
 
 export function KeepCutPauseStreamer() {
   const [state, setState] = useState<StreamerState>(STREAMER_INITIAL)
+  const [reducedMotion, setReducedMotion] = useState(false)
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
-    if (prefersReducedMotion()) {
-      setState(STREAMER_SETTLED_STATE)
-      return
+    const reduced = prefersReducedMotion()
+    setReducedMotion(reduced)
+    if (reduced) {
+      setState({
+        wordIndex: 0,
+        charCount: STREAM_WORDS[0].length,
+        phase: "holding",
+      })
     }
     setReady(true)
   }, [])
 
   useEffect(() => {
-    if (!ready || state.phase === "settled") return
+    if (!ready) return
     const timer = window.setTimeout(() => {
-      setState((current) => nextStreamerState(current))
-    }, streamerDelayMs(state))
+      setState((current) => (reducedMotion ? jumpToNextWord(current) : nextStreamerState(current)))
+    }, streamerDelayMs(state, reducedMotion))
     return () => window.clearTimeout(timer)
-  }, [ready, state])
+  }, [ready, reducedMotion, state])
 
-  const settled = state.phase === "settled"
   const caretIdle = state.phase === "holding"
 
   return (
     <p
       data-ritestack-streamer="keep-cut-pause"
       data-cycle={STREAM_WORDS.join(",")}
-      data-settled={settled ? "true" : "false"}
+      data-loop="true"
       aria-live="polite"
-      className="font-mono text-2xl leading-none tracking-tight"
+      className="font-mono text-base leading-none tracking-tight"
     >
       <span>{streamerVisible(state)}</span>
-      {settled ? null : (
-        <span
-          aria-hidden="true"
-          className={caretIdle ? "ritestack-caret ritestack-caret-idle" : "ritestack-caret"}
-        />
-      )}
+      <span
+        aria-hidden="true"
+        className={caretIdle ? "ritestack-caret ritestack-caret-idle" : "ritestack-caret"}
+      />
     </p>
   )
 }
