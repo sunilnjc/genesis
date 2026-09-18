@@ -775,7 +775,7 @@ function InventoryCard({
           ) : null}
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="flex flex-col items-start gap-2">
         <CancelLink row={row} />
         <Button size="sm" variant="ghost" className="h-8 px-0 text-muted-foreground" onClick={() => onEdit(row)}>
           Edit
