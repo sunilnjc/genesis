@@ -1,0 +1,13 @@
+{
+  "name": "ritestack-e2e-cancel-url",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@supabase/supabase-js": "^2.57.4"
+  }
+}
