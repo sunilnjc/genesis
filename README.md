@@ -1,12 +1,14 @@
-# Genesis
+# RiteStack
 
 You don’t miss the cancel button. You miss a date to decide.
 
 Keep, cut, or pause your AI/dev tool stack — last-used and a cancel URL. The list is inventory. The ritual is the product. This is not a scanner, not Gmail scrape, and not a streaming-cancel app.
 
-**GitHub:** [https://github.com/sunilnjc/genesis](https://github.com/sunilnjc/genesis)
+**Product:** RiteStack · **URL:** [https://ritestack.app](https://ritestack.app) · **GitHub:** [https://github.com/sunilnjc/genesis](https://github.com/sunilnjc/genesis)
 
 Dark by default (Midday-quiet). Brand marks use each product’s Simple Icons / official hex — not white or `currentColor`. Mobile is a stacked-card app shell with a PWA so you can Add to Home Screen.
+
+Hosted on **Cloudflare Pages** (project `ritestack`). Not Vercel. `stackburn.app` will 301 here later.
 
 ## What it does
 
@@ -31,14 +33,24 @@ App: [http://127.0.0.1:4317](http://127.0.0.1:4317)
 
 ## Add to Home Screen
 
-Genesis is a PWA named **Genesis** (standalone, dark `#101010` icons).
+RiteStack is a PWA named **RiteStack** (standalone, dark `#101010` icons).
 
-**iPhone / iPad (Safari):** Open [http://127.0.0.1:4317](http://127.0.0.1:4317) → Share → **Add to Home Screen** → Add. (Use your Mac/phone’s LAN URL if you are not on this machine.)
+**iPhone / iPad (Safari):** Open the app URL → Share → **Add to Home Screen** → Add.
 
-**Android (Chrome):** Open the same URL → menu → **Install app** / **Add to Home Screen**.
+**Android (Chrome):** Open the app URL → menu → **Install app** / **Add to Home Screen**.
 
 On a phone you’ll get burn at the top, stacked cards, huge Keep / Cut / Pause, and Add at the bottom. Desktop still uses the denser table.
 
+## Deploy (Cloudflare Pages)
+
+Static export → Pages project **`ritestack`**.
+
+```bash
+npm run deploy
+```
+
+Needs Wrangler logged in (`npx wrangler login`). Production branch is `main`. Custom domain `ritestack.app` is attached on the Pages project; `stackburn.app` stays a later redirect.
+
 ## Stack
 
-Next.js, TypeScript, Tailwind CSS, shadcn/ui (Mira / neutral, compact), next-themes (`defaultTheme="dark"`).
+Next.js (static export), TypeScript, Tailwind CSS, shadcn/ui (Mira / neutral, compact), next-themes (`defaultTheme="dark"`), Cloudflare Pages.

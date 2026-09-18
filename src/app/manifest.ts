@@ -1,9 +1,11 @@
 import type { MetadataRoute } from "next"
 
+export const dynamic = "force-static"
+
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Genesis",
-    short_name: "Genesis",
+    name: "RiteStack",
+    short_name: "RiteStack",
     description:
       "Keep, cut, or pause your AI/dev tool stack — last-used and a cancel URL.",
     start_url: "/",

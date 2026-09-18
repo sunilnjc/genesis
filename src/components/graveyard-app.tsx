@@ -230,31 +230,24 @@ export function GraveyardApp() {
   }
 
   return (
-    <div className="flex min-h-full flex-1 flex-col">
+    <div className="flex min-h-full w-full max-w-[100vw] flex-1 flex-col overflow-x-hidden">
       <header className="sticky top-0 z-20 border-b border-foreground/10 bg-background/95 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 backdrop-blur md:hidden">
-        <div className="flex items-end justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-[0.625rem] font-medium tracking-[0.14em] text-muted-foreground uppercase">
-              Genesis
-            </p>
-            <p className="text-xs text-muted-foreground">Keep, cut, or pause.</p>
-          </div>
-          <div className="text-right">
-            <p className="font-mono text-2xl font-medium tabular-nums tracking-tight">
-              {formatMoney(burn)}
-            </p>
-            <p className="text-[0.625rem] text-muted-foreground">
-              {queue.length} to decide
-            </p>
-          </div>
-        </div>
+        <p className="text-[0.625rem] font-medium tracking-[0.14em] text-muted-foreground uppercase">
+          RiteStack
+        </p>
+        <p className="font-mono text-3xl font-medium tabular-nums tracking-tight">
+          {formatMoney(burn)}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Still paying · {queue.length} to decide
+        </p>
       </header>
 
       <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] md:py-8 md:pb-8">
         <header className="hidden flex-col gap-3 md:flex md:flex-row md:items-end md:justify-between">
           <div className="space-y-1">
             <p className="text-[0.625rem] font-medium tracking-[0.14em] text-muted-foreground uppercase">
-              Genesis
+              RiteStack
             </p>
             <h1 className="font-heading text-lg font-medium tracking-tight sm:text-xl">
               You don’t miss the cancel button. You miss a date to decide.
@@ -735,16 +728,22 @@ function HugeDecisionActions({
   onDecide: (id: string, decision: Decision) => void
 }) {
   return (
-    <div className="grid grid-cols-3 gap-2">
-      <Button className="h-11 text-sm" variant="outline" onClick={() => onDecide(row.id, "keep")}>
-        Keep
-      </Button>
-      <Button className="h-11 text-sm" variant="outline" onClick={() => onDecide(row.id, "pause")}>
-        Pause
-      </Button>
-      <Button className="h-11 text-sm" variant="destructive" onClick={() => onDecide(row.id, "cut")}>
-        Cut
-      </Button>
+    <div className="grid grid-cols-3 gap-1.5">
+      {([
+        ["keep", "Keep", "outline"],
+        ["pause", "Pause", "outline"],
+        ["cut", "Cut", "destructive"],
+      ] as const).map(([decision, label, variant]) => (
+        <div key={decision} className="min-w-0">
+          <Button
+            className="h-11 w-full min-w-0 px-1 text-sm"
+            variant={variant}
+            onClick={() => onDecide(row.id, decision)}
+          >
+            {label}
+          </Button>
+        </div>
+      ))}
     </div>
   )
 }

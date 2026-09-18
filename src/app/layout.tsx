@@ -19,14 +19,15 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Genesis",
-  applicationName: "Genesis",
+  metadataBase: new URL("https://ritestack.app"),
+  title: "RiteStack",
+  applicationName: "RiteStack",
   description:
     "Keep, cut, or pause your AI/dev tool stack — last-used and a cancel URL.",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Genesis",
+    title: "RiteStack",
   },
   formatDetection: { telephone: false },
   icons: {
