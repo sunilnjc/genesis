@@ -132,3 +132,29 @@
     @apply font-sans;
   }
 }
+
+/* Cursor-style block caret for the keep → cut → pause streamer. */
+.ritestack-caret {
+  display: inline-block;
+  width: 0.45ch;
+  height: 1.05em;
+  margin-left: 0.12em;
+  background: currentColor;
+  vertical-align: -0.12em;
+}
+
+.ritestack-caret-idle {
+  animation: ritestack-caret-blink 1.05s steps(1, end) infinite;
+}
+
+@keyframes ritestack-caret-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ritestack-caret-idle {
+    animation: none;
+  }
+}
