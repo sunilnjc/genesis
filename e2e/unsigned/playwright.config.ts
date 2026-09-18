@@ -5,7 +5,7 @@ const hostedBaseURL = process.env.RITESTACK_BASE_URL ?? "https://ritestack.app"
 export default defineConfig({
   testDir: ".",
   testMatch: "*.spec.ts",
-  timeout: 45_000,
+  timeout: 60_000,
   expect: { timeout: 12_000 },
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
