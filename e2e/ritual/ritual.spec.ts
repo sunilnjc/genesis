@@ -48,7 +48,7 @@ async function addTool(
   page: Page,
   input: { name: string; cost: string; cancelUrl: string }
 ) {
-  await page.getByRole("button", { name: /Add (a )?subscription/i }).click()
+  await page.getByRole("button", { name: /Add (a )?subscription/i }).first().click()
   const dialog = page.getByRole("dialog")
   await expect(dialog).toBeVisible()
   await dialog.locator("#sub-name").fill(input.name)
