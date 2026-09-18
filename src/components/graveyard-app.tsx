@@ -230,97 +230,125 @@ export function GraveyardApp() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-6 sm:py-8">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div className="space-y-1">
-          <p className="text-[0.625rem] font-medium tracking-[0.14em] text-muted-foreground uppercase">
-            Genesis
-          </p>
-          <h1 className="font-heading text-lg font-medium tracking-tight sm:text-xl">
-            You don’t miss the cancel button. You miss a date to decide.
-          </h1>
-          <p className="max-w-2xl text-xs/relaxed text-muted-foreground">
-            Keep, cut, or pause — with last-used and a link to actually do it. No bank sync. No inbox scan. No auto-cancel.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {subscriptions.length === 0 ? null : (
-            <Button variant="outline" onClick={loadSample}>
-              Load sample stack
-            </Button>
-          )}
-          <Button onClick={openAdd}>
-            <HugeiconsIcon icon={Add01Icon} strokeWidth={2} data-icon="inline-start" />
-            Add subscription
-          </Button>
+    <div className="flex min-h-full flex-1 flex-col">
+      <header className="sticky top-0 z-20 border-b border-foreground/10 bg-background/95 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 backdrop-blur md:hidden">
+        <div className="flex items-end justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[0.625rem] font-medium tracking-[0.14em] text-muted-foreground uppercase">
+              Genesis
+            </p>
+            <p className="text-xs text-muted-foreground">Keep, cut, or pause.</p>
+          </div>
+          <div className="text-right">
+            <p className="font-mono text-2xl font-medium tabular-nums tracking-tight">
+              {formatMoney(burn)}
+            </p>
+            <p className="text-[0.625rem] text-muted-foreground">
+              {queue.length} to decide
+            </p>
+          </div>
         </div>
       </header>
 
-      {actionError ? (
-        <Alert variant="destructive">
-          <HugeiconsIcon icon={Alert02Icon} strokeWidth={2} />
-          <AlertTitle>Save failed</AlertTitle>
-          <AlertDescription>{actionError}</AlertDescription>
-        </Alert>
-      ) : null}
-
-      {sampleCount > 0 ? (
-        <Alert>
-          <AlertTitle>Sample AI-tool stack</AlertTitle>
-          <AlertDescription>
-            {sampleCount} labeled sample rows are in this list so you can run the ritual. They are not your real stack.
-          </AlertDescription>
-          <Button variant="outline" size="sm" className="mt-2 w-fit" onClick={stripSample}>
-            Remove sample rows
-          </Button>
-        </Alert>
-      ) : null}
-
-      {subscriptions.length === 0 ? (
-        <Empty className="border border-dashed py-16">
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <HugeiconsIcon icon={InboxIcon} strokeWidth={2} />
-            </EmptyMedia>
-            <EmptyTitle>No tools on the list yet</EmptyTitle>
-            <EmptyDescription>
-              Add the AI and dev tools you pay for. Keep, cut, or pause with last-used and a cancel URL.
-            </EmptyDescription>
-          </EmptyHeader>
-          <EmptyContent>
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <Button onClick={openAdd}>Add a subscription</Button>
+      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] md:py-8 md:pb-8">
+        <header className="hidden flex-col gap-3 md:flex md:flex-row md:items-end md:justify-between">
+          <div className="space-y-1">
+            <p className="text-[0.625rem] font-medium tracking-[0.14em] text-muted-foreground uppercase">
+              Genesis
+            </p>
+            <h1 className="font-heading text-lg font-medium tracking-tight sm:text-xl">
+              You don’t miss the cancel button. You miss a date to decide.
+            </h1>
+            <p className="max-w-2xl text-xs/relaxed text-muted-foreground">
+              Keep, cut, or pause — with last-used and a link to actually do it. No bank sync. No inbox scan. No auto-cancel.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {subscriptions.length === 0 ? null : (
               <Button variant="outline" onClick={loadSample}>
-                Load a sample AI-tool stack
+                Load sample stack
               </Button>
-            </div>
-          </EmptyContent>
-        </Empty>
-      ) : (
-        <>
-          <section className="grid grid-cols-2 gap-2 lg:grid-cols-4">
-            <Stat label="Monthly burn" value={formatMoney(burn)} hint="Still paying" />
-            <Stat label="Cut this pass" value={formatMoney(cut)} hint="Burn dropped" />
-            <Stat label="Decide-by" value={String(queue.length)} hint="Need a decision" />
-            <Stat label="Still undecided" value={String(undecided)} hint="No keep/cut/pause yet" />
-          </section>
+            )}
+            <Button onClick={openAdd}>
+              <HugeiconsIcon icon={Add01Icon} strokeWidth={2} data-icon="inline-start" />
+              Add subscription
+            </Button>
+          </div>
+        </header>
 
-          <QueueSection
-            today={today}
-            rows={queue}
-            onDecide={decide}
-            onEdit={openEdit}
-          />
+        {actionError ? (
+          <Alert variant="destructive">
+            <HugeiconsIcon icon={Alert02Icon} strokeWidth={2} />
+            <AlertTitle>Save failed</AlertTitle>
+            <AlertDescription>{actionError}</AlertDescription>
+          </Alert>
+        ) : null}
 
-          <InventorySection
-            today={today}
-            rows={subscriptions}
-            onEdit={openEdit}
-            onRemove={remove}
-            onDecide={decide}
-          />
-        </>
-      )}
+        {sampleCount > 0 ? (
+          <Alert>
+            <AlertTitle>Sample AI-tool stack</AlertTitle>
+            <AlertDescription>
+              {sampleCount} labeled sample rows are in this list so you can run the ritual. They are not your real stack.
+            </AlertDescription>
+            <Button variant="outline" size="sm" className="mt-2 w-fit" onClick={stripSample}>
+              Remove sample rows
+            </Button>
+          </Alert>
+        ) : null}
+
+        {subscriptions.length === 0 ? (
+          <Empty className="border border-dashed py-16">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <HugeiconsIcon icon={InboxIcon} strokeWidth={2} />
+              </EmptyMedia>
+              <EmptyTitle>No tools on the list yet</EmptyTitle>
+              <EmptyDescription>
+                Add the AI and dev tools you pay for. Keep, cut, or pause with last-used and a cancel URL.
+              </EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Button onClick={openAdd}>Add a subscription</Button>
+                <Button variant="outline" onClick={loadSample}>
+                  Load a sample AI-tool stack
+                </Button>
+              </div>
+            </EmptyContent>
+          </Empty>
+        ) : (
+          <>
+            <section className="hidden grid-cols-2 gap-2 md:grid lg:grid-cols-4">
+              <Stat label="Monthly burn" value={formatMoney(burn)} hint="Still paying" />
+              <Stat label="Cut this pass" value={formatMoney(cut)} hint="Burn dropped" />
+              <Stat label="Decide-by" value={String(queue.length)} hint="Need a decision" />
+              <Stat label="Still undecided" value={String(undecided)} hint="No keep/cut/pause yet" />
+            </section>
+
+            <QueueSection
+              today={today}
+              rows={queue}
+              onDecide={decide}
+              onEdit={openEdit}
+            />
+
+            <InventorySection
+              today={today}
+              rows={subscriptions}
+              onEdit={openEdit}
+              onRemove={remove}
+              onDecide={decide}
+            />
+          </>
+        )}
+      </div>
+
+      <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-foreground/10 bg-background/95 px-4 pt-2 backdrop-blur md:hidden pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <Button className="h-11 w-full text-sm" onClick={openAdd}>
+          <HugeiconsIcon icon={Add01Icon} strokeWidth={2} data-icon="inline-start" />
+          Add subscription
+        </Button>
+      </nav>
 
       {formOpen ? (
         <SubscriptionForm
@@ -473,20 +501,24 @@ function QueueCard({
     <Card size="sm">
       <CardHeader>
         <CardTitle className="flex items-center justify-between gap-2">
-          <span className="flex min-w-0 items-center gap-2">
-            <ToolMark name={row.name} />
-            <span className="truncate">{row.name}</span>
+          <span className="flex min-w-0 items-center gap-2.5">
+            <ToolMark name={row.name} size="lg" />
+            <span className="truncate text-base">{row.name}</span>
           </span>
-          <span className="font-mono text-sm tabular-nums">{formatMoney(row.monthlyCost)}</span>
+          <span className="font-mono text-lg tabular-nums">{formatMoney(row.monthlyCost)}</span>
         </CardTitle>
         <CardDescription>
           Renews {formatDate(row.renewDate)} · Last used{" "}
-          {row.lastUsed ? formatDate(row.lastUsed) : "unknown"}
+          {row.lastUsed ? formatDate(row.lastUsed) : "not set"}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         <ReasonBadges row={row} today={today} />
-        <DecisionActions row={row} onDecide={onDecide} onEdit={onEdit} />
+        <CancelLink row={row} />
+        <HugeDecisionActions row={row} onDecide={onDecide} />
+        <Button size="sm" variant="ghost" className="h-8 px-0 text-muted-foreground" onClick={() => onEdit(row)}>
+          Edit
+        </Button>
       </CardContent>
     </Card>
   )
@@ -513,7 +545,18 @@ function InventorySection({
           The list. The ritual is the queue above.
         </p>
       </div>
-      <div className="overflow-hidden rounded-lg bg-card ring-1 ring-foreground/10">
+      <div className="grid gap-2 md:hidden">
+        {rows.map((row) => (
+          <InventoryCard
+            key={row.id}
+            row={row}
+            today={today}
+            onDecide={onDecide}
+            onEdit={onEdit}
+          />
+        ))}
+      </div>
+      <div className="hidden overflow-hidden rounded-lg bg-card ring-1 ring-foreground/10 md:block">
         <Table>
           <TableHeader>
             <TableRow>
@@ -592,11 +635,51 @@ function InventorySection({
   )
 }
 
+function InventoryCard({
+  row,
+  today,
+  onDecide,
+  onEdit,
+}: {
+  row: Subscription
+  today: string
+  onDecide: (id: string, decision: Decision) => void
+  onEdit: (row: Subscription) => void
+}) {
+  return (
+    <Card size="sm" className={row.decision === "cut" ? "opacity-70" : undefined}>
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between gap-2">
+          <span className="flex min-w-0 items-center gap-2.5">
+            <ToolMark name={row.name} size="md" />
+            <span className="truncate">{row.name}</span>
+          </span>
+          <span className="font-mono text-sm tabular-nums">{formatMoney(row.monthlyCost)}</span>
+        </CardTitle>
+        <CardDescription className="flex flex-wrap items-center gap-2">
+          {decisionBadge(row.decision)}
+          <span>{row.category}</span>
+          {row.decision === "pause" && row.remindAt ? (
+            <span>Remind {formatRelativeDay(row.remindAt, today)}</span>
+          ) : null}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <CancelLink row={row} />
+        <HugeDecisionActions row={row} onDecide={onDecide} />
+        <Button size="sm" variant="ghost" className="h-8 px-0 text-muted-foreground" onClick={() => onEdit(row)}>
+          Edit
+        </Button>
+      </CardContent>
+    </Card>
+  )
+}
+
 function NameCell({ row }: { row: Subscription }) {
   return (
     <div className="min-w-32">
       <div className="flex items-center gap-1.5">
-        <ToolMark name={row.name} />
+        <ToolMark name={row.name} size="md" />
         <span className="font-medium">{row.name}</span>
         {row.isSample ? (
           <Badge variant="outline" className="font-normal">
@@ -604,20 +687,31 @@ function NameCell({ row }: { row: Subscription }) {
           </Badge>
         ) : null}
       </div>
-      {row.cancelUrl ? (
-        <a
-          href={row.cancelUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 text-[0.625rem] text-muted-foreground underline-offset-2 hover:underline"
-        >
-          <HugeiconsIcon icon={Link01Icon} strokeWidth={2} className="size-3" />
-          Cancel URL
-        </a>
-      ) : (
-        <span className="text-[0.625rem] text-muted-foreground">No cancel URL</span>
-      )}
+      <CancelLink row={row} className="text-[0.625rem]" />
     </div>
+  )
+}
+
+function CancelLink({
+  row,
+  className,
+}: {
+  row: Subscription
+  className?: string
+}) {
+  if (!row.cancelUrl) {
+    return <span className={className ?? "text-xs text-muted-foreground"}>No cancel URL</span>
+  }
+  return (
+    <a
+      href={row.cancelUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`inline-flex items-center gap-1 text-xs text-muted-foreground underline-offset-2 hover:underline ${className ?? ""}`}
+    >
+      <HugeiconsIcon icon={Link01Icon} strokeWidth={2} className="size-3.5" />
+      Cancel URL
+    </a>
   )
 }
 
@@ -629,6 +723,28 @@ function ReasonBadges({ row, today }: { row: Subscription; today: string }) {
           {reasonLabel(reason)}
         </Badge>
       ))}
+    </div>
+  )
+}
+
+function HugeDecisionActions({
+  row,
+  onDecide,
+}: {
+  row: Subscription
+  onDecide: (id: string, decision: Decision) => void
+}) {
+  return (
+    <div className="grid grid-cols-3 gap-2">
+      <Button className="h-11 text-sm" variant="outline" onClick={() => onDecide(row.id, "keep")}>
+        Keep
+      </Button>
+      <Button className="h-11 text-sm" variant="outline" onClick={() => onDecide(row.id, "pause")}>
+        Pause
+      </Button>
+      <Button className="h-11 text-sm" variant="destructive" onClick={() => onDecide(row.id, "cut")}>
+        Cut
+      </Button>
     </div>
   )
 }

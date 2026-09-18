@@ -105,7 +105,7 @@ export function SubscriptionForm({
             <Field data-invalid={!!errors.name}>
               <FieldLabel htmlFor="sub-name">Name</FieldLabel>
               <div className="flex items-center gap-2">
-                <ToolMark name={draft.name} />
+                <ToolMark name={draft.name} size="md" />
                 <Input
                 id="sub-name"
                 value={draft.name}

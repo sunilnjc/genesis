@@ -1,12 +1,20 @@
 import { cn } from "@/lib/utils"
 import { brandInitial, matchBrand } from "@/lib/brand-catalog"
 
+const sizes = {
+  sm: "size-4",
+  md: "size-6",
+  lg: "size-8",
+} as const
+
 export function ToolMark({
   name,
   className,
+  size = "sm",
 }: {
   name: string
   className?: string
+  size?: keyof typeof sizes
 }) {
   const brand = matchBrand(name)
 
@@ -15,7 +23,8 @@ export function ToolMark({
       <span
         aria-hidden
         className={cn(
-          "inline-flex size-4 shrink-0 items-center justify-center rounded-sm bg-muted text-[0.625rem] font-medium text-muted-foreground",
+          "inline-flex shrink-0 items-center justify-center rounded-sm bg-muted text-[0.625rem] font-medium text-muted-foreground",
+          sizes[size],
           className
         )}
       >
@@ -26,22 +35,20 @@ export function ToolMark({
 
   return (
     <span
-      role="img"
-      aria-label={brand.title}
       className={cn(
-        "inline-block size-4 shrink-0 bg-foreground text-foreground",
+        "inline-flex shrink-0 items-center justify-center",
+        brand.plate && "rounded-[3px] bg-neutral-200 p-px",
+        sizes[size],
         className
       )}
-      style={{
-        maskImage: `url(${brand.src})`,
-        WebkitMaskImage: `url(${brand.src})`,
-        maskRepeat: "no-repeat",
-        WebkitMaskRepeat: "no-repeat",
-        maskPosition: "center",
-        WebkitMaskPosition: "center",
-        maskSize: "contain",
-        WebkitMaskSize: "contain",
-      }}
-    />
+    >
+      {/* Painted SVG — brand hex, never currentColor / foreground / white mask. */}
+      <img
+        src={brand.src}
+        alt={brand.title}
+        className="size-full object-contain"
+        draggable={false}
+      />
+    </span>
   )
 }
