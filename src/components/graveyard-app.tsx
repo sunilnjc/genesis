@@ -312,13 +312,13 @@ export function GraveyardApp({
             </div>
             <div className="flex flex-col items-stretch gap-2 sm:items-end">
               {headerAccessory}
-              {view === "inventory" && hydrated && canMutate ? (
+              {hydrated && canMutate ? (
                 <div className="flex flex-wrap gap-2">
-                  {subscriptions.length === 0 ? null : (
+                  {view === "inventory" && subscriptions.length > 0 ? (
                     <Button variant="outline" onClick={loadSample}>
                       Load sample stack
                     </Button>
-                  )}
+                  ) : null}
                   <Button onClick={openAdd}>
                     <HugeiconsIcon icon={Add01Icon} strokeWidth={2} data-icon="inline-start" />
                     Add subscription
@@ -385,8 +385,9 @@ export function GraveyardApp({
               {canMutate ? (
                 <EmptyContent>
                   <div className="flex flex-col gap-2 sm:flex-row">
-                    <Button asChild>
-                      <Link href={pathForView("inventory")}>Add in Inventory</Link>
+                    <Button onClick={openAdd}>
+                      <HugeiconsIcon icon={Add01Icon} strokeWidth={2} data-icon="inline-start" />
+                      Add a subscription
                     </Button>
                   </div>
                 </EmptyContent>

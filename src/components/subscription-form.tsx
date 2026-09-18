@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, type FormEvent } from "react"
+import { useEffect, useRef, useState, type FormEvent } from "react"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog"
 import {
   Field,
+  FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
@@ -25,6 +26,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { BRAND_CATALOG } from "@/lib/brand-catalog"
+import {
+  cancelUrlFromLookup,
+  type CancelLookupResponse,
+} from "@/lib/cancel-lookup-client"
 import { emptyDraft, parseCost, validateDraft } from "@/lib/validate"
 import { CATEGORIES, type Subscription, type SubscriptionDraft } from "@/lib/types"
 import { ToolMark } from "@/components/tool-mark"
@@ -60,6 +66,62 @@ export function SubscriptionForm({
     editing ? draftFromSub(editing) : emptyDraft(today)
   )
   const [errors, setErrors] = useState<ReturnType<typeof validateDraft>>({})
+  const [finding, setFinding] = useState(false)
+  const filledBy = useRef("")
+  const userOwnsCancel = useRef(false)
+  const lookupGen = useRef(0)
+  const draftRef = useRef(draft)
+  draftRef.current = draft
+
+  useEffect(() => {
+    const name = draft.name.trim()
+    if (!open || !name || userOwnsCancel.current) {
+      lookupGen.current += 1
+      setFinding(false)
+      return
+    }
+
+    const gen = ++lookupGen.current
+    setFinding(true)
+    const handle = window.setTimeout(() => {
+      void runLookup(name, gen)
+    }, 450)
+    return () => window.clearTimeout(handle)
+  }, [draft.name, open])
+
+  async function runLookup(name: string, gen: number) {
+    try {
+      const response = await fetch("/api/cancel-lookup", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name }),
+      })
+      const result = (await response.json()) as CancelLookupResponse
+      if (gen !== lookupGen.current) return
+      applyLookup(name, result.url)
+    } catch {
+      if (gen !== lookupGen.current) return
+      applyLookup(name, null)
+    }
+  }
+
+  function applyLookup(name: string, resultUrl: string | null | undefined) {
+    if (userOwnsCancel.current) {
+      setFinding(false)
+      return
+    }
+    const current = draftRef.current
+    if (current.name.trim() !== name) return
+    const next = cancelUrlFromLookup({
+      current: current.cancelUrl,
+      filledBy: filledBy.current,
+      userOwns: false,
+      resultUrl,
+    })
+    filledBy.current = next.filledBy
+    setDraft((row) => (row.cancelUrl === next.cancelUrl ? row : { ...row, cancelUrl: next.cancelUrl }))
+    setFinding(false)
+  }
 
   function handleOpenChange(next: boolean) {
     onOpenChange(next)
@@ -107,14 +169,29 @@ export function SubscriptionForm({
               <div className="flex items-center gap-2">
                 <ToolMark name={draft.name} size="md" />
                 <Input
-                id="sub-name"
-                value={draft.name}
-                aria-invalid={!!errors.name}
-                placeholder="Cursor Pro"
-                onChange={(event) =>
-                  setDraft((current) => ({ ...current, name: event.target.value }))
-                }
-              />
+                  id="sub-name"
+                  value={draft.name}
+                  aria-invalid={!!errors.name}
+                  placeholder="Cursor, Netlify, Fly…"
+                  list="ritestack-catalog-names"
+                  autoComplete="off"
+                  onChange={(event) => {
+                    const name = event.target.value
+                    setDraft((current) => {
+                      if (userOwnsCancel.current) return { ...current, name }
+                      if (current.cancelUrl && current.cancelUrl === filledBy.current) {
+                        filledBy.current = ""
+                        return { ...current, name, cancelUrl: "" }
+                      }
+                      return { ...current, name }
+                    })
+                  }}
+                />
+                <datalist id="ritestack-catalog-names">
+                  {BRAND_CATALOG.map((brand) => (
+                    <option key={brand.slug} value={brand.title} />
+                  ))}
+                </datalist>
               </div>
               <FieldError>{errors.name}</FieldError>
             </Field>
@@ -185,13 +262,20 @@ export function SubscriptionForm({
                 value={draft.cancelUrl}
                 aria-invalid={!!errors.cancelUrl}
                 placeholder="https://…"
-                onChange={(event) =>
+                data-cancel-lookup={finding ? "looking" : draft.cancelUrl ? "found" : "idle"}
+                onChange={(event) => {
+                  userOwnsCancel.current = true
+                  filledBy.current = ""
+                  setFinding(false)
                   setDraft((current) => ({
                     ...current,
                     cancelUrl: event.target.value,
                   }))
-                }
+                }}
               />
+              {finding && !userOwnsCancel.current ? (
+                <FieldDescription>finding cancel link…</FieldDescription>
+              ) : null}
               <FieldError>{errors.cancelUrl}</FieldError>
             </Field>
             <Field>
