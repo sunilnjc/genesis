@@ -1,6 +1,8 @@
 "use client"
 
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react"
+import Link from "next/link"
+import { usePathname, useRouter } from "next/navigation"
 import { Alert02Icon, Add01Icon, InboxIcon, Link01Icon, MoreHorizontalIcon, PauseIcon, ScissorIcon, Tick02Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { SubscriptionForm, parseCost } from "@/components/subscription-form"
@@ -47,20 +49,7 @@ import { useGraveyardStore } from "@/lib/use-graveyard-store"
 import type { Decision, Subscription, SubscriptionDraft } from "@/lib/types"
 import { ToolMark } from "@/components/tool-mark"
 import { cn } from "@/lib/utils"
-
-type AppView = "decide" | "inventory"
-
-function readView(): AppView {
-  if (typeof window === "undefined") return "decide"
-  return window.location.hash.replace(/^#/, "") === "inventory" ? "inventory" : "decide"
-}
-
-function writeView(view: AppView) {
-  const next = view === "inventory" ? "#inventory" : "#decide"
-  if (window.location.hash !== next) {
-    window.history.replaceState(null, "", next)
-  }
-}
+import { pathForView, pathFromHash, viewFromPathname, type AppView } from "@/lib/views"
 
 function decisionBadge(decision: Decision) {
   switch (decision) {
@@ -93,24 +82,19 @@ export function GraveyardApp() {
   const [actionError, setActionError] = useState<string | null>(null)
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Subscription | null>(null)
-  const [view, setView] = useState<AppView>("decide")
+  const pathname = usePathname()
+  const router = useRouter()
+  const view = viewFromPathname(pathname)
   const subscriptions =
     current.status === "ok" ? current.store.subscriptions : EMPTY_SUBSCRIPTIONS
   const loadError = current.status === "error" ? current.message : null
 
   useEffect(() => {
-    setView(readView())
-    function onHash() {
-      setView(readView())
-    }
-    window.addEventListener("hashchange", onHash)
-    return () => window.removeEventListener("hashchange", onHash)
-  }, [])
-
-  function go(next: AppView) {
-    setView(next)
-    writeView(next)
-  }
+    const next = pathFromHash(window.location.hash)
+    if (!next) return
+    if (next !== pathname) router.replace(next)
+    else if (window.location.hash) router.replace(pathname)
+  }, [pathname, router])
 
   function withSave(updater: (current: Subscription[]) => Subscription[]) {
     const next = updater(subscriptions)
@@ -232,21 +216,7 @@ export function GraveyardApp() {
     setActionError(null)
   }
 
-  if (!hydrated) {
-    return (
-      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 px-4 py-6">
-        <div className="h-8 w-48 animate-pulse rounded-md bg-muted" />
-        <div className="grid gap-2 sm:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, index) => (
-            <div key={index} className="h-20 animate-pulse rounded-lg bg-muted" />
-          ))}
-        </div>
-        <p className="text-xs text-muted-foreground">Loading your list…</p>
-      </div>
-    )
-  }
-
-  if (loadError) {
+  if (hydrated && loadError) {
     return (
       <main className="mx-auto flex w-full max-w-lg flex-1 flex-col justify-center gap-4 px-4 py-10">
         <Alert variant="destructive">
@@ -260,7 +230,10 @@ export function GraveyardApp() {
   }
 
   return (
-    <div className="flex min-h-full w-full max-w-[100vw] flex-1 flex-col overflow-x-hidden">
+    <div
+      className="flex min-h-full w-full max-w-[100vw] flex-1 flex-col overflow-x-hidden"
+      data-view={view}
+    >
       <header className="sticky top-0 z-20 border-b border-foreground/10 bg-background/95 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 backdrop-blur md:hidden">
         <p className="text-[0.625rem] font-medium tracking-[0.14em] text-muted-foreground uppercase">
           RiteStack
@@ -268,7 +241,7 @@ export function GraveyardApp() {
         {view === "inventory" ? (
           <>
             <p className="font-mono text-3xl font-medium tabular-nums tracking-tight">
-              {formatMoney(burn)}
+              {hydrated ? formatMoney(burn) : "—"}
             </p>
             <p className="text-xs text-muted-foreground">Monthly burn · still paying</p>
           </>
@@ -276,9 +249,11 @@ export function GraveyardApp() {
           <>
             <p className="font-heading text-xl font-medium tracking-tight">Decide</p>
             <p className="text-xs text-muted-foreground">
-              {queue.length === 0
-                ? "Nothing waiting"
-                : `${queue.length} tool${queue.length === 1 ? "" : "s"} need a decision`}
+              {!hydrated
+                ? "Loading your queue…"
+                : queue.length === 0
+                  ? "Nothing waiting"
+                  : `${queue.length} tool${queue.length === 1 ? "" : "s"} need a decision`}
             </p>
           </>
         )}
@@ -302,7 +277,7 @@ export function GraveyardApp() {
                   : "The list you pay for. Add, edit, and see monthly burn. Ritual is Decide."}
               </p>
             </div>
-            {view === "inventory" ? (
+            {view === "inventory" && hydrated ? (
               <div className="flex flex-wrap gap-2">
                 {subscriptions.length === 0 ? null : (
                   <Button variant="outline" onClick={loadSample}>
@@ -316,7 +291,7 @@ export function GraveyardApp() {
               </div>
             ) : null}
           </div>
-          <ViewTabs view={view} queueCount={queue.length} onView={go} />
+          <ViewTabs view={view} queueCount={queue.length} />
         </header>
 
         {actionError ? (
@@ -327,7 +302,7 @@ export function GraveyardApp() {
           </Alert>
         ) : null}
 
-        {view === "inventory" && sampleCount > 0 ? (
+        {hydrated && view === "inventory" && sampleCount > 0 ? (
           <Alert>
             <AlertTitle>Sample AI-tool stack</AlertTitle>
             <AlertDescription>
@@ -339,7 +314,12 @@ export function GraveyardApp() {
           </Alert>
         ) : null}
 
-        {view === "decide" ? (
+        {!hydrated ? (
+          <div className="space-y-2">
+            <div className="h-24 animate-pulse rounded-lg bg-muted" />
+            <p className="text-xs text-muted-foreground">Loading your list…</p>
+          </div>
+        ) : view === "decide" ? (
           subscriptions.length === 0 ? (
             <Empty className="border border-dashed py-16">
               <EmptyHeader>
@@ -353,9 +333,8 @@ export function GraveyardApp() {
               </EmptyHeader>
               <EmptyContent>
                 <div className="flex flex-col gap-2 sm:flex-row">
-                  <Button onClick={openAdd}>Add a subscription</Button>
-                  <Button variant="outline" onClick={() => go("inventory")}>
-                    Open Inventory
+                  <Button asChild>
+                    <Link href={pathForView("inventory")}>Add in Inventory</Link>
                   </Button>
                 </div>
               </EmptyContent>
@@ -366,8 +345,6 @@ export function GraveyardApp() {
               rows={queue}
               onDecide={decide}
               onEdit={openEdit}
-              onOpenInventory={() => go("inventory")}
-              onAdd={openAdd}
             />
           )
         ) : subscriptions.length === 0 ? (
@@ -399,7 +376,9 @@ export function GraveyardApp() {
             <section className="grid grid-cols-2 gap-2 lg:grid-cols-4">
               <Stat label="Monthly burn" value={formatMoney(burn)} hint="Still paying" />
               <Stat label="Cut this pass" value={formatMoney(cut)} hint="Burn dropped" />
-              <Stat label="Decide-by" value={String(queue.length)} hint="Need a decision" />
+              <Link href={pathForView("decide")} className="rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30">
+                <Stat label="Decide-by" value={String(queue.length)} hint="Open Decide" />
+              </Link>
               <Stat label="Still undecided" value={String(undecided)} hint="No keep/cut/pause yet" />
             </section>
             <InventorySection
@@ -407,14 +386,13 @@ export function GraveyardApp() {
               rows={subscriptions}
               onEdit={openEdit}
               onRemove={remove}
-              onDecide={decide}
             />
           </>
         )}
       </div>
 
       <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-foreground/10 bg-background/95 px-2 pt-2 backdrop-blur md:hidden pb-[max(0.5rem,env(safe-area-inset-bottom))]">
-        <ViewTabs view={view} queueCount={queue.length} onView={go} />
+        <ViewTabs view={view} queueCount={queue.length} />
       </nav>
 
       {formOpen ? (
@@ -437,38 +415,44 @@ export function GraveyardApp() {
 function ViewTabs({
   view,
   queueCount,
-  onView,
 }: {
   view: AppView
   queueCount: number
-  onView: (next: AppView) => void
 }) {
   return (
-    <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
-      <button
-        type="button"
-        onClick={() => onView("decide")}
+    <div
+      className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1"
+      role="tablist"
+      aria-label="Switch RiteStack views"
+    >
+      <Link
+        href={pathForView("decide")}
+        role="tab"
+        aria-selected={view === "decide"}
+        aria-current={view === "decide" ? "page" : undefined}
         className={cn(
-          "h-9 rounded-md text-sm font-medium transition-colors",
+          "flex h-9 items-center justify-center rounded-md text-sm font-medium transition-colors",
           view === "decide"
             ? "bg-background text-foreground shadow-sm"
             : "text-muted-foreground"
         )}
       >
         Decide{queueCount > 0 ? ` · ${queueCount}` : ""}
-      </button>
-      <button
-        type="button"
-        onClick={() => onView("inventory")}
+      </Link>
+      <Link
+        href={pathForView("inventory")}
+        role="tab"
+        aria-selected={view === "inventory"}
+        aria-current={view === "inventory" ? "page" : undefined}
         className={cn(
-          "h-9 rounded-md text-sm font-medium transition-colors",
+          "flex h-9 items-center justify-center rounded-md text-sm font-medium transition-colors",
           view === "inventory"
             ? "bg-background text-foreground shadow-sm"
             : "text-muted-foreground"
         )}
       >
         Inventory
-      </button>
+      </Link>
     </div>
   )
 }
@@ -500,18 +484,14 @@ function QueueSection({
   rows,
   onDecide,
   onEdit,
-  onOpenInventory,
-  onAdd,
 }: {
   today: string
   rows: Subscription[]
   onDecide: (id: string, decision: Decision) => void
   onEdit: (row: Subscription) => void
-  onOpenInventory: () => void
-  onAdd: () => void
 }) {
   return (
-    <section className="space-y-3">
+    <section className="space-y-3" data-list="decide-by">
       <p className="hidden text-xs text-muted-foreground md:block">
         Renewing soon, last-used not set or stale, still undecided, and pauses that are due. One action per row.
       </p>
@@ -520,16 +500,13 @@ function QueueSection({
           <EmptyHeader>
             <EmptyTitle>Nothing to decide</EmptyTitle>
             <EmptyDescription>
-              Queue is empty. Open Inventory to browse the list, or add a tool.
+              Queue is empty. Open Inventory to browse the full list or add a tool.
             </EmptyDescription>
           </EmptyHeader>
           <EmptyContent>
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <Button onClick={onOpenInventory}>Open Inventory</Button>
-              <Button variant="outline" onClick={onAdd}>
-                Add a subscription
-              </Button>
-            </div>
+            <Button asChild>
+              <Link href={pathForView("inventory")}>Open Inventory</Link>
+            </Button>
           </EmptyContent>
         </Empty>
       ) : (
@@ -644,16 +621,14 @@ function InventorySection({
   rows,
   onEdit,
   onRemove,
-  onDecide,
 }: {
   today: string
   rows: Subscription[]
   onEdit: (row: Subscription) => void
   onRemove: (id: string) => void
-  onDecide: (id: string, decision: Decision) => void
 }) {
   return (
-    <section className="space-y-3">
+    <section className="space-y-3" data-list="inventory">
       <div>
         <p className="text-xs text-muted-foreground">
           Full list. Add and edit here. Keep / cut / pause is on Decide.
@@ -722,16 +697,6 @@ function InventorySection({
                           Open cancel URL
                         </DropdownMenuItem>
                       ) : null}
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => onDecide(row.id, "keep")}>
-                        Keep
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onDecide(row.id, "pause")}>
-                        Pause · remind in 30 days
-                      </DropdownMenuItem>
-                      <DropdownMenuItem variant="destructive" onClick={() => onDecide(row.id, "cut")}>
-                        Cut
-                      </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem variant="destructive" onClick={() => onRemove(row.id)}>
                         Delete row
