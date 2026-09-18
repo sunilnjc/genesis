@@ -82,10 +82,11 @@ Copy `.env.example` to `.env.local` with the **ritestack** Supabase URL + anon k
 ### Isolation
 
 ```bash
-node scripts/isolation-test.mjs
+npm run isolation
+npm run e2e:isolation
 ```
 
-See [docs/isolation-test.md](docs/isolation-test.md). Two JWTs must not see each other’s `subscriptions`.
+See [docs/isolation-test.md](docs/isolation-test.md). Two JWTs must not see each other’s `subscriptions`. Playwright hits `https://ritestack.app` with the same `@example.invalid` isolation accounts (no founder inbox). First time: `npx playwright install chromium`.
 
 ## Add to Home Screen
 

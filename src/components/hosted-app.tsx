@@ -15,7 +15,10 @@ export function HostedApp() {
 
   if (auth.status === "loading") {
     return (
-      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 px-4 py-6">
+      <div
+        data-ritestack-screen="session-check"
+        className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 px-4 py-6"
+      >
         <div className="h-8 w-48 animate-pulse rounded-md bg-muted" />
         <div className="grid gap-2 sm:grid-cols-4">
           {Array.from({ length: 4 }).map((_, index) => (
@@ -44,7 +47,7 @@ export function HostedApp() {
 
   return (
     <>
-      <div className="hidden" data-ritestack-user-id={auth.userId ?? ""} />
+      <div className="hidden" data-ritestack-screen="app" data-ritestack-user-id={auth.userId ?? ""} />
       <GraveyardApp headerAccessory={<AuthStatusChip />} />
     </>
   )

@@ -18,10 +18,15 @@ Job Pursuit (`vhjwzxcgkmxvrmfstzpy`) is forbidden.
 From the genesis checkout, with `.env.local` containing the **ritestack** URL, anon key, and service role (service role stays off the client):
 
 ```bash
-node scripts/isolation-test.mjs
+npm run isolation
+npm run e2e:isolation
 ```
 
-Expected stdout includes `PASS: two-user isolation` and the new project ref.
+`npm run isolation` is `node scripts/isolation-test.mjs`. Expected stdout includes `PASS: two-user isolation` and the RiteStack project ref.
+
+`npm run e2e:isolation` runs Playwright against **https://ritestack.app** (`e2e/isolation/playwright.config.ts` + `e2e/isolation/isolation.spec.ts`). It reuses `ritestack-iso-a@example.invalid` / `ritestack-iso-b@example.invalid` via the Admin API (password session, no magic-link mail, never the founder inbox). First time: `npx playwright install chromium`.
+
+Unsigned HTML and the login wall must not show founder rows or User A’s IsoProbe. User B’s inventory stays empty even if `subscription-graveyard.v1` is poisoned with the founder seed.
 
 ## Manual proof (two browsers)
 
@@ -29,6 +34,7 @@ Expected stdout includes `PASS: two-user isolation` and the new project ref.
 2. Browser A: magic-link as address 1. Inventory is empty. Add OpenAI Pro+ $200.
 3. Browser B (private window): magic-link as a different address. Inventory stays empty. A’s $200 must not appear.
 4. Sign out A — hosted URL must return to the login screen, not localStorage.
+5. Do not send extra magic links to the founder inbox; the automated pair above is enough.
 
 ## SQL check (optional)
 
