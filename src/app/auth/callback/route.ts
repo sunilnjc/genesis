@@ -42,12 +42,11 @@ export async function GET(request: NextRequest) {
       return applyCookies(NextResponse.redirect(new URL(next, request.url)), pending)
     }
 
-    const { data, error } = await supabase.auth.getUser()
-    if (error) return fail(request, classifyAuthFailure(error.message), pending)
+    const { data } = await supabase.auth.getUser()
     if (data.user) {
       return applyCookies(NextResponse.redirect(new URL(next, request.url)), pending)
     }
-    return fail(request, "missing", pending)
+    return fail(request, parsed.kind === "empty" ? "missing" : classifyAuthFailure(null), pending)
   } catch (cause) {
     const message = cause instanceof Error ? cause.message : ""
     return fail(request, classifyAuthFailure(message), pending)
