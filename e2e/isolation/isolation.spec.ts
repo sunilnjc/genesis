@@ -117,7 +117,7 @@ test.describe("hosted two-account isolation", () => {
     await page.goto("/inventory")
     await waitForApp(page, pair.userA.id)
     await expect(page.getByRole("table").getByText(secretName, { exact: true })).toBeVisible()
-    await expect(page.getByText("$200").first()).toBeVisible()
+    await expect(page.getByRole("table").getByText("$200", { exact: true })).toBeVisible()
     await assertNoFounderRows(page, iso.FOUNDER_ROW_NAMES)
     const seed = await page.evaluate((key) => window.localStorage.getItem(key), iso.LOCAL_SEED_KEY)
     if (seed) expect(seed).not.toContain(secretName)
