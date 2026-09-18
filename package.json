@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start --port 4317 --hostname 127.0.0.1",
     "lint": "eslint",
-    "test": "node --experimental-strip-types --test src/lib/views.test.ts",
+    "test": "node --experimental-strip-types --test src/lib/views.test.ts tests/*.test.ts",
+    "stripe:setup": "node --env-file=.env.local scripts/stripe-test-setup.mjs",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
