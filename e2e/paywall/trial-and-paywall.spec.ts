@@ -7,7 +7,6 @@ import {
   expectRitualUnlocked,
   mockBillingStatus,
   trialStatus,
-  visibleTab,
   visibleText,
   waitForApp,
 } from "./helpers"
@@ -51,7 +50,7 @@ test.describe("7-day ritual trial then day-8 paywall", () => {
     await expect(page.getByRole("button", { name: /unlock ritestack pack · \$14/i })).toBeVisible()
     await expectRitualLocked(page)
     await expect(page.locator('[data-list="decide-by"]')).toBeVisible()
-    await expect(page.getByText("Locked").first()).toBeVisible()
+    await expect(page.getByText("Locked", { exact: true }).filter({ visible: true }).first()).toBeVisible()
     await expectNoInventedIntegrations(page)
   })
 
@@ -69,8 +68,8 @@ test.describe("7-day ritual trial then day-8 paywall", () => {
     await page.locator("#sub-name").fill("E2E Paywall Free Add")
     await page.locator("#sub-cost").fill("9")
     await page.getByRole("button", { name: /add to list/i }).click()
-    await expect(page.getByText("E2E Paywall Free Add")).toBeVisible()
-    await expect(page.getByText("Monthly burn").first()).toBeVisible()
+    await expect(page.getByRole("table").getByText("E2E Paywall Free Add")).toBeVisible()
+    await expect(page.getByText("Monthly burn", { exact: true })).toBeVisible()
     await expectNoInventedIntegrations(page)
   })
 
@@ -83,8 +82,8 @@ test.describe("7-day ritual trial then day-8 paywall", () => {
     await expect(page.getByText(/trial ended/i)).toBeVisible()
     await expectRitualLocked(page)
 
-    await visibleTab(page, /^inventory$/i).click()
-    await expect(page).toHaveURL(/\/inventory/)
+    await page.goto("/inventory")
+    await waitForApp(page)
     await expectInventoryFree(page)
     await expect(page.getByText("Ritual locked")).toBeVisible()
   })

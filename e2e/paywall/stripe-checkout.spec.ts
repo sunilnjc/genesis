@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test"
 import {
   completeStripeTestCard,
+  expectInventoryFree,
   expectNoInventedIntegrations,
   expectRitualLocked,
   expectRitualUnlocked,
@@ -31,7 +32,7 @@ test.describe("Stripe $14 one-time pack (test card 4242)", () => {
 
     await page.goto("/inventory")
     await waitForApp(page)
-    await expect(page.getByText("Monthly burn").first()).toBeVisible()
+    await expectInventoryFree(page)
     await expect(page.getByRole("link", { name: /cancel url/i }).first()).toBeVisible()
   })
 })
