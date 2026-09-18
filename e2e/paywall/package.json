@@ -1,0 +1,11 @@
+{
+  "name": "ritestack-e2e-paywall",
+  "private": true,
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.55.1"
+  }
+}
