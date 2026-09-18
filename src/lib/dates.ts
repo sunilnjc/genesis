@@ -5,6 +5,12 @@ export function todayISO(now = new Date()): string {
   return `${year}-${month}-${day}`
 }
 
+/** Used when the founder didn’t give a renew date. */
+export function firstOfNextMonth(now = new Date()): string {
+  const next = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+  return todayISO(next)
+}
+
 export function addDays(iso: string, days: number): string {
   const date = parseISODate(iso)
   date.setDate(date.getDate() + days)

@@ -14,7 +14,9 @@ This repo is named **genesis**. The product is Subscription Graveyard.
 - Last-used as a date you set, or **unknown**
 - Keep / cut / pause, with pause reminding in 30 days
 - Dashboard: monthly burn, $ cut this pass, decide-by queue
-- Sample AI-tool stack (Cursor, ChatGPT, Vercel, Notion, Figma, Linear, hosting, domain) — clearly labeled **Sample**
+- Default list is the founder’s confirmed tools (not samples): OpenAI Pro+ $200, Cursor Pro $20, Claude $20, Cloudflare workers $10, Twitter (X) $95, CoinGecko $100 — **$445/mo** if all stay active
+- Local Simple Icons (and a CoinGecko gecko mark) on matching names; unknown tools get a letter, not a fake logo
+- Optional extra rows from **Load sample stack** stay labeled **Sample**
 - Data stays in the browser (`localStorage`). No auth, no Plaid, no auto-cancel.
 
 ## Run locally

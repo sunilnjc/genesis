@@ -38,6 +38,7 @@ export type Subscription = {
 
 export type GraveyardStore = {
   version: 1
+  seedVersion?: number
   subscriptions: Subscription[]
 }
 

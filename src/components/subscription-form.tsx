@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/select"
 import { emptyDraft, parseCost, validateDraft } from "@/lib/validate"
 import { CATEGORIES, type Subscription, type SubscriptionDraft } from "@/lib/types"
+import { ToolMark } from "@/components/tool-mark"
 
 type Props = {
   open: boolean
@@ -103,7 +104,9 @@ export function SubscriptionForm({
           <FieldGroup className="gap-3">
             <Field data-invalid={!!errors.name}>
               <FieldLabel htmlFor="sub-name">Name</FieldLabel>
-              <Input
+              <div className="flex items-center gap-2">
+                <ToolMark name={draft.name} />
+                <Input
                 id="sub-name"
                 value={draft.name}
                 aria-invalid={!!errors.name}
@@ -112,6 +115,7 @@ export function SubscriptionForm({
                   setDraft((current) => ({ ...current, name: event.target.value }))
                 }
               />
+              </div>
               <FieldError>{errors.name}</FieldError>
             </Field>
             <div className="grid gap-3 sm:grid-cols-2">

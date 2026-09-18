@@ -1,3 +1,9 @@
+import {
+  FOUNDER_SEED_VERSION,
+  FOUNDER_TOOLS,
+  founderStack,
+  isFounderToolName,
+} from "@/lib/founder-stack"
 import type { GraveyardStore, Subscription } from "@/lib/types"
 
 export const STORAGE_KEY = "subscription-graveyard.v1"
@@ -32,7 +38,80 @@ function isSubscription(value: unknown): value is Subscription {
 }
 
 export function emptyStore(): GraveyardStore {
-  return { version: 1, subscriptions: [] }
+  return { version: 1, seedVersion: FOUNDER_SEED_VERSION, subscriptions: [] }
+}
+
+const EMPTY_STORE: GraveyardStore = {
+  version: 1,
+  seedVersion: FOUNDER_SEED_VERSION,
+  subscriptions: [],
+}
+
+export function getEmptyStoreSnapshot(): GraveyardStore {
+  return EMPTY_STORE
+}
+
+export function seededStore(now = new Date()): GraveyardStore {
+  return {
+    version: 1,
+    seedVersion: FOUNDER_SEED_VERSION,
+    subscriptions: founderStack(now),
+  }
+}
+
+function mergeFounderRows(existing: Subscription[], now = new Date()): Subscription[] {
+  const founder = founderStack(now)
+  const real = existing.filter((row) => !row.isSample)
+  const extras = real.filter((row) => !isFounderToolName(row.name))
+
+  const merged = founder.map((next) => {
+    const prev = real.find((row) => isFounderToolName(row.name) && namesAlign(row.name, next.name))
+    if (!prev) return next
+    return {
+      ...prev,
+      name: next.name,
+      monthlyCost: next.monthlyCost,
+      category: next.category,
+      cancelUrl: next.cancelUrl,
+      lastUsed: prev.lastUsed,
+      isSample: false,
+      updatedAt: now.toISOString(),
+    }
+  })
+
+  return [...merged, ...extras]
+}
+
+function namesAlign(existing: string, founderName: string): boolean {
+  const key = existing.trim().toLowerCase()
+  if (founderName === "OpenAI Pro+") return /openai|chatgpt pro/i.test(existing)
+  if (founderName === "Cursor Pro") return /cursor/i.test(existing)
+  if (founderName === "Claude") return /claude/i.test(existing)
+  if (founderName === "Cloudflare workers") return /cloudflare/i.test(existing)
+  if (founderName === "Twitter (X)") {
+    return /twitter|\bx premium\b|\bx pro\b/i.test(existing) || key === "x"
+  }
+  if (founderName === "CoinGecko") return /coingecko/i.test(existing)
+  return key === founderName.trim().toLowerCase()
+}
+
+export function applyFounderSeed(store: GraveyardStore): GraveyardStore {
+  const currentVersion = store.seedVersion ?? 0
+  const hasAllFounder =
+    currentVersion >= FOUNDER_SEED_VERSION &&
+    FOUNDER_TOOLS.every((tool) =>
+      store.subscriptions.some(
+        (row) => !row.isSample && namesAlign(row.name, tool.name)
+      )
+    )
+
+  if (hasAllFounder) return store
+
+  return {
+    version: 1,
+    seedVersion: FOUNDER_SEED_VERSION,
+    subscriptions: mergeFounderRows(store.subscriptions),
+  }
 }
 
 export function loadStore(): GraveyardStore {
@@ -48,21 +127,49 @@ export function loadStore(): GraveyardStore {
     )
   }
 
-  if (!raw) return emptyStore()
+  if (!raw) {
+    const seeded = seededStore()
+    try {
+      saveStore(seeded)
+    } catch {
+      /* still return seeded so the first paint isn’t empty */
+    }
+    return seeded
+  }
 
   try {
     const parsed = JSON.parse(raw) as Partial<GraveyardStore>
     if (parsed.version !== 1 || !Array.isArray(parsed.subscriptions)) {
       throw new Error("unexpected shape")
     }
-    if (!parsed.subscriptions.every(isSubscription)) {
+    const existing = parsed.subscriptions
+    if (!existing.every(isSubscription)) {
       throw new Error("invalid row")
     }
-    return {
+    const next = applyFounderSeed({
       version: 1,
-      subscriptions: parsed.subscriptions,
+      seedVersion: parsed.seedVersion,
+      subscriptions: existing,
+    })
+    if (
+      next.seedVersion !== parsed.seedVersion ||
+      next.subscriptions.length !== existing.length ||
+      next.subscriptions.some(
+        (row, index) =>
+          row.id !== existing[index]?.id ||
+          row.monthlyCost !== existing[index]?.monthlyCost ||
+          row.isSample !== existing[index]?.isSample
+      )
+    ) {
+      try {
+        saveStore(next)
+      } catch {
+        /* keep the in-memory seed even if persist fails */
+      }
     }
+    return next
   } catch (cause) {
+    if (cause instanceof StorageError) throw cause
     throw new StorageError(
       "Saved subscriptions look corrupted. You can start a fresh list without losing the app.",
       { cause }

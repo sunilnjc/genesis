@@ -45,6 +45,7 @@ import { sampleStack } from "@/lib/sample-data"
 import { StorageError } from "@/lib/storage"
 import { useGraveyardStore } from "@/lib/use-graveyard-store"
 import type { Decision, Subscription, SubscriptionDraft } from "@/lib/types"
+import { ToolMark } from "@/components/tool-mark"
 
 function decisionBadge(decision: Decision) {
   switch (decision) {
@@ -472,7 +473,10 @@ function QueueCard({
     <Card size="sm">
       <CardHeader>
         <CardTitle className="flex items-center justify-between gap-2">
-          <span>{row.name}</span>
+          <span className="flex min-w-0 items-center gap-2">
+            <ToolMark name={row.name} />
+            <span className="truncate">{row.name}</span>
+          </span>
           <span className="font-mono text-sm tabular-nums">{formatMoney(row.monthlyCost)}</span>
         </CardTitle>
         <CardDescription>
@@ -592,6 +596,7 @@ function NameCell({ row }: { row: Subscription }) {
   return (
     <div className="min-w-32">
       <div className="flex items-center gap-1.5">
+        <ToolMark name={row.name} />
         <span className="font-medium">{row.name}</span>
         {row.isSample ? (
           <Badge variant="outline" className="font-normal">
