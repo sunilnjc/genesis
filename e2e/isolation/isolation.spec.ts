@@ -1,19 +1,31 @@
 import { expect, test, type Browser, type BrowserContext, type Page } from "@playwright/test"
-import {
-  FOUNDER_ROW_NAMES,
-  LOCAL_SEED_KEY,
-  founderSeedPoison,
-  prepareIsoPair,
-  proveApiIsolation,
-  wipeIsoRows,
-} from "../../scripts/isolation-test.mjs"
 
-type IsoPair = Awaited<ReturnType<typeof prepareIsoPair>>
+type IsoPair = {
+  admin: { from: (table: string) => unknown }
+  userA: { id: string }
+  userB: { id: string }
+  userAEmail: string
+  storageKey: string
+  sessionA: unknown
+  sessionB: unknown
+  hostedOrigin: string
+}
+
+type IsoModule = {
+  FOUNDER_ROW_NAMES: string[]
+  LOCAL_SEED_KEY: string
+  founderSeedPoison: () => string
+  prepareIsoPair: (options: { stamp: number; secretName: string }) => Promise<IsoPair>
+  proveApiIsolation: (pair: IsoPair) => Promise<void>
+  wipeIsoRows: (admin: IsoPair["admin"], userIds: string[]) => Promise<void>
+}
 
 async function injectSession(
   context: BrowserContext,
   storageKey: string,
   session: unknown,
+  seedKey: string,
+  poison: string,
   poisonSeed = false
 ) {
   await context.addInitScript(
@@ -22,13 +34,7 @@ async function injectSession(
       if (poisonSeed) window.localStorage.setItem(seedKey, poison)
       else window.localStorage.removeItem(seedKey)
     },
-    {
-      storageKey,
-      session,
-      seedKey: LOCAL_SEED_KEY,
-      poison: founderSeedPoison(),
-      poisonSeed,
-    }
+    { storageKey, session, seedKey, poison, poisonSeed }
   )
 }
 
@@ -42,14 +48,10 @@ async function waitForApp(page: Page, userId: string) {
   await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible()
 }
 
-async function assertNoFounderRows(page: Page) {
-  for (const name of FOUNDER_ROW_NAMES) {
+async function assertNoFounderRows(page: Page, names: string[]) {
+  for (const name of names) {
     await expect(page.getByText(name, { exact: true })).toHaveCount(0)
   }
-}
-
-async function localSeedValue(page: Page) {
-  return page.evaluate((key) => window.localStorage.getItem(key), LOCAL_SEED_KEY)
 }
 
 test.describe.configure({ mode: "serial" })
@@ -57,17 +59,19 @@ test.describe.configure({ mode: "serial" })
 test.describe("hosted two-account isolation", () => {
   const stamp = Date.now()
   const secretName = `IsoProbe ${stamp}`
+  let iso: IsoModule
   let pair: IsoPair
   let browser: Browser
 
   test.beforeAll(async ({ browser: workerBrowser }) => {
     browser = workerBrowser
-    pair = await prepareIsoPair({ stamp, secretName })
-    await proveApiIsolation(pair)
+    iso = (await import("../../scripts/isolation-test.mjs")) as IsoModule
+    pair = await iso.prepareIsoPair({ stamp, secretName })
+    await iso.proveApiIsolation(pair)
   })
 
   test.afterAll(async () => {
-    if (pair) await wipeIsoRows(pair.admin, [pair.userA.id, pair.userB.id])
+    if (iso && pair) await iso.wipeIsoRows(pair.admin, [pair.userA.id, pair.userB.id])
   })
 
   test("unsigned HTML has no founder seed and no User A row", async ({ request, baseURL }) => {
@@ -87,12 +91,12 @@ test.describe("hosted two-account isolation", () => {
       ({ seedKey, poison }) => {
         window.localStorage.setItem(seedKey, poison)
       },
-      { seedKey: LOCAL_SEED_KEY, poison: founderSeedPoison() }
+      { seedKey: iso.LOCAL_SEED_KEY, poison: iso.founderSeedPoison() }
     )
     const page = await context.newPage()
     await page.goto("/inventory")
     await waitForLogin(page)
-    await assertNoFounderRows(page)
+    await assertNoFounderRows(page, iso.FOUNDER_ROW_NAMES)
     await expect(page.getByText(secretName, { exact: true })).toHaveCount(0)
     await expect(page.getByRole("button", { name: "Sign out" })).toHaveCount(0)
     await expect(page.getByText("No tools on the list yet")).toHaveCount(0)
@@ -101,28 +105,40 @@ test.describe("hosted two-account isolation", () => {
 
   test("User A sees only their IsoProbe row on ritestack.app", async () => {
     const context = await browser.newContext()
-    await injectSession(context, pair.storageKey, pair.sessionA, true)
+    await injectSession(
+      context,
+      pair.storageKey,
+      pair.sessionA,
+      iso.LOCAL_SEED_KEY,
+      iso.founderSeedPoison(),
+      true
+    )
     const page = await context.newPage()
     await page.goto("/inventory")
     await waitForApp(page, pair.userA.id)
     await expect(page.getByText(secretName, { exact: true })).toBeVisible()
     await expect(page.getByText("$200").first()).toBeVisible()
-    await assertNoFounderRows(page)
-    const seed = await localSeedValue(page)
-    if (seed) {
-      expect(seed).not.toContain(secretName)
-    }
+    await assertNoFounderRows(page, iso.FOUNDER_ROW_NAMES)
+    const seed = await page.evaluate((key) => window.localStorage.getItem(key), iso.LOCAL_SEED_KEY)
+    if (seed) expect(seed).not.toContain(secretName)
     await context.close()
   })
 
   test("User B never sees User A’s row, even with a poisoned localStorage seed", async () => {
     const context = await browser.newContext()
-    await injectSession(context, pair.storageKey, pair.sessionB, true)
+    await injectSession(
+      context,
+      pair.storageKey,
+      pair.sessionB,
+      iso.LOCAL_SEED_KEY,
+      iso.founderSeedPoison(),
+      true
+    )
     const page = await context.newPage()
     await page.goto("/inventory")
     await waitForApp(page, pair.userB.id)
     await expect(page.getByText(secretName, { exact: true })).toHaveCount(0)
-    await assertNoFounderRows(page)
+    await assertNoFounderRows(page, iso.FOUNDER_ROW_NAMES)
     await expect(page.getByText("No tools on the list yet")).toBeVisible()
     await expect(page.getByText(pair.userAEmail)).toHaveCount(0)
     await context.close()
@@ -133,7 +149,7 @@ test.describe("hosted two-account isolation", () => {
     const page = await unsigned.newPage()
     await page.goto("/")
     await waitForLogin(page)
-    expect(await localSeedValue(page)).toBeNull()
+    expect(await page.evaluate((key) => window.localStorage.getItem(key), iso.LOCAL_SEED_KEY)).toBeNull()
     const authKeys = await page.evaluate(() =>
       Object.keys(window.localStorage).filter((key) => key.startsWith("sb-") && key.endsWith("-auth-token"))
     )
