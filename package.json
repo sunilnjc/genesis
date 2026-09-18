@@ -1,5 +1,5 @@
 {
-  "name": "subscription-graveyard",
+  "name": "genesis",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -14,6 +14,7 @@
     "class-variance-authority": "^0.7.1",
     "cn": "^0.3.0",
     "next": "16.3.5",
+    "next-themes": "^0.4.6",
     "radix-ui": "^1.6.7",
     "react": "19.2.8",
     "react-dom": "19.2.8",

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
+import { ThemeProvider } from "@/components/theme-provider";
 import { cn } from "@/lib/utils";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
@@ -17,9 +18,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Subscription Graveyard",
+  title: "Genesis",
   description:
-    "Keep, cut, or pause the AI-tool stack you actually pay for — with last-used and a cancel URL.",
+    "Keep, cut, or pause your AI/dev tool stack — last-used and a cancel URL.",
 };
 
 export default function RootLayout({
@@ -31,16 +32,16 @@ export default function RootLayout({
     <html
       lang="en"
       className={cn(
-        "h-full",
-        "antialiased",
+        "dark h-full antialiased",
         geistSans.variable,
         geistMono.variable,
         "font-sans",
         inter.variable
       )}
+      suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
-        {children}
+        <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
   );

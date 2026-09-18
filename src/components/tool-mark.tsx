@@ -29,7 +29,7 @@ export function ToolMark({
       role="img"
       aria-label={brand.title}
       className={cn(
-        "inline-block size-4 shrink-0 bg-foreground",
+        "inline-block size-4 shrink-0 bg-foreground text-foreground",
         className
       )}
       style={{

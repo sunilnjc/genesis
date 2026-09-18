@@ -234,13 +234,13 @@ export function GraveyardApp() {
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-1">
           <p className="text-[0.625rem] font-medium tracking-[0.14em] text-muted-foreground uppercase">
-            Subscription Graveyard
+            Genesis
           </p>
           <h1 className="font-heading text-lg font-medium tracking-tight sm:text-xl">
             You don’t miss the cancel button. You miss a date to decide.
           </h1>
           <p className="max-w-2xl text-xs/relaxed text-muted-foreground">
-            Keep, cut, or pause — with last-used and a link to actually do it. No bank sync. No auto-cancel.
+            Keep, cut, or pause — with last-used and a link to actually do it. No bank sync. No inbox scan. No auto-cancel.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -284,7 +284,7 @@ export function GraveyardApp() {
             </EmptyMedia>
             <EmptyTitle>No tools on the list yet</EmptyTitle>
             <EmptyDescription>
-              Add the tools you actually pay for. Start with Cursor, ChatGPT, Vercel, Notion, Figma, Linear, hosting, domains.
+              Add the AI and dev tools you pay for. Keep, cut, or pause with last-used and a cancel URL.
             </EmptyDescription>
           </EmptyHeader>
           <EmptyContent>
@@ -402,7 +402,7 @@ function QueueSection({
               />
             ))}
           </div>
-          <div className="hidden rounded-lg ring-1 ring-foreground/10 md:block">
+          <div className="hidden overflow-hidden rounded-lg bg-card ring-1 ring-foreground/10 md:block">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -513,7 +513,7 @@ function InventorySection({
           The list. The ritual is the queue above.
         </p>
       </div>
-      <div className="rounded-lg ring-1 ring-foreground/10">
+      <div className="overflow-hidden rounded-lg bg-card ring-1 ring-foreground/10">
         <Table>
           <TableHeader>
             <TableRow>
