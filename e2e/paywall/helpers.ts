@@ -45,7 +45,11 @@ export async function mockBillingStatus(page: Page, body: object) {
 
 export async function waitForApp(page: Page) {
   await expect(page.getByText("Checking session…")).toHaveCount(0, { timeout: 20_000 })
-  await expect(page.getByText("RiteStack").first()).toBeVisible()
+  await expect(page.locator("[data-view]")).toBeVisible()
+}
+
+export function visibleTab(page: Page, name: RegExp) {
+  return page.getByRole("tab", { name }).filter({ visible: true })
 }
 
 export async function expectNoInventedIntegrations(page: Page) {

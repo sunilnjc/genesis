@@ -7,6 +7,7 @@ import {
   expectRitualUnlocked,
   mockBillingStatus,
   trialStatus,
+  visibleTab,
   waitForApp,
 } from "./helpers"
 
@@ -81,7 +82,7 @@ test.describe("7-day ritual trial then day-8 paywall", () => {
     await expect(page.getByText(/trial ended/i)).toBeVisible()
     await expectRitualLocked(page)
 
-    await page.getByRole("link", { name: /^inventory$/i }).first().click()
+    await visibleTab(page, /^inventory$/i).click()
     await expect(page).toHaveURL(/\/inventory/)
     await expectInventoryFree(page)
     await expect(page.getByText("Ritual locked")).toBeVisible()
