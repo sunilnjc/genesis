@@ -8,6 +8,7 @@ import {
   mockBillingStatus,
   trialStatus,
   visibleTab,
+  visibleText,
   waitForApp,
 } from "./helpers"
 
@@ -21,7 +22,7 @@ test.describe("7-day ritual trial then day-8 paywall", () => {
     await expect(page.getByText("7-day ritual trial")).toBeVisible()
     await expect(page.getByText(/preview trial/i)).toBeVisible()
     await expectRitualUnlocked(page)
-    await expect(page.getByText("Unlock keep / cut / pause")).toHaveCount(0)
+    await expect(page.getByText("Unlock keep / cut / pause", { exact: true })).toHaveCount(0)
     await expectNoInventedIntegrations(page)
   })
 
@@ -60,8 +61,8 @@ test.describe("7-day ritual trial then day-8 paywall", () => {
 
     await expect(page.getByText("Ritual locked")).toBeVisible()
     await expectInventoryFree(page)
-    await expect(page.getByText("OpenAI").first()).toBeVisible()
-    await expect(page.getByText("Cancel URL locked").first()).toBeVisible()
+    await expect(visibleText(page, "OpenAI")).toBeVisible()
+    await expect(visibleText(page, "Cancel URL locked")).toBeVisible()
     await expect(page.getByRole("button", { name: /^keep$/i })).toHaveCount(0)
 
     await page.getByRole("button", { name: /add subscription/i }).click()

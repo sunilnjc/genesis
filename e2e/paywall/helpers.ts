@@ -70,7 +70,18 @@ export async function expectRitualLocked(page: Page) {
   await expect(page.getByRole("button", { name: /^keep$/i })).toHaveCount(0)
   await expect(page.getByRole("button", { name: /^cut$/i })).toHaveCount(0)
   await expect(page.getByRole("button", { name: /^pause$/i })).toHaveCount(0)
-  await expect(page.getByText("Cancel URL locked").first()).toBeVisible()
+  await expect(page.getByText("Cancel URL locked").filter({ visible: true })).toBeVisible()
+}
+
+export async function expectInventoryFree(page: Page) {
+  await expect(page.getByText("Monthly burn", { exact: true })).toBeVisible()
+  await expect(page.getByText("Decide-by", { exact: true })).toBeVisible()
+  await expect(page.locator('[data-list="inventory"]')).toBeVisible()
+  await expect(page.getByRole("button", { name: /add subscription/i }).filter({ visible: true })).toBeVisible()
+}
+
+export function visibleText(page: Page, text: string | RegExp) {
+  return page.getByText(text).filter({ visible: true })
 }
 
 export async function expectInventoryFree(page: Page) {
