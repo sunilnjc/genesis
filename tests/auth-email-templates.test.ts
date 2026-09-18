@@ -43,7 +43,7 @@ test("both auth flows have code and confirmation link", () => {
   }
 })
 
-test("link uses supabase confirmation url not a fixed redirect", () => {
+test("link uses ConfirmationURL placeholder filled by the mailer", () => {
   for (const filename of TEMPLATES) {
     const source = readFileSync(join(TEMPLATE_DIR, filename), "utf8")
     const links = startTags(source)
@@ -76,7 +76,7 @@ test("accessible responsive structure", () => {
   }
 })
 
-test("confirmation URL stays on the RiteStack project", () => {
+test("confirmation URL lands on ritestack.app with token_hash, not supabase verify", () => {
   const url = confirmationUrl(
     {
       token_hash: "abc123",
@@ -85,13 +85,37 @@ test("confirmation URL stays on the RiteStack project", () => {
     },
     `https://${RITESTACK_SUPABASE_REF}.supabase.co`
   )
-  assert.equal(
-    url,
-    `https://${RITESTACK_SUPABASE_REF}.supabase.co/auth/v1/verify?token=abc123&type=magiclink&redirect_to=https%3A%2F%2Fritestack.app%2Fauth%2Fcallback`
-  )
+  assert.equal(url, "https://ritestack.app/auth/callback?token_hash=abc123&type=magiclink")
+  assert.equal(url.includes("supabase.co"), false)
+  assert.equal(url.includes("/auth/v1/verify"), false)
   assert.equal(pickTemplateName("magiclink"), "sign-in.html")
   assert.equal(pickTemplateName("signup"), "confirm-sign-up.html")
   assert.throws(() => assertRiteStackRef("https://vhjwzxcgkmxvrmfstzpy.supabase.co"))
+})
+
+test("confirmation URL keeps localhost callbacks and rejects other hosts", () => {
+  assert.equal(
+    confirmationUrl(
+      {
+        token_hash: "local",
+        email_action_type: "magiclink",
+        redirect_to: "http://127.0.0.1:4317/auth/callback",
+      },
+      `https://${RITESTACK_SUPABASE_REF}.supabase.co`
+    ),
+    "http://127.0.0.1:4317/auth/callback?token_hash=local&type=magiclink"
+  )
+  assert.equal(
+    confirmationUrl(
+      {
+        token_hash: "evil",
+        email_action_type: "magiclink",
+        redirect_to: "https://evil.example/auth/callback",
+      },
+      `https://${RITESTACK_SUPABASE_REF}.supabase.co`
+    ),
+    "https://ritestack.app/auth/callback?token_hash=evil&type=magiclink"
+  )
 })
 
 test("renderer fills gotrue placeholders only", () => {
@@ -109,7 +133,8 @@ test("renderer fills gotrue placeholders only", () => {
   assert.equal(html.includes("305805"), true)
   assert.equal(html.includes("{{ .Token }}"), false)
   assert.equal(html.includes("{{ .ConfirmationURL }}"), false)
-  assert.equal(html.includes(`${RITESTACK_SUPABASE_REF}.supabase.co/auth/v1/verify`), true)
+  assert.equal(html.includes("https://ritestack.app/auth/callback?token_hash=deadbeef&type=magiclink"), true)
+  assert.equal(html.includes(`${RITESTACK_SUPABASE_REF}.supabase.co/auth/v1/verify`), false)
   assert.equal(html.includes("thejobpursuit"), false)
 })
 

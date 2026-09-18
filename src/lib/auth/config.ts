@@ -58,3 +58,4 @@ export function subscriptionListMode(input: {
 }
 
 export const AUTH_CALLBACK_PATH = "/auth/callback"
+export const AUTH_ERROR_PATH = "/auth/error"

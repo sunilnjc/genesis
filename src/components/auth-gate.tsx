@@ -62,7 +62,7 @@ export function LoginScreen() {
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
         {sentTo ? (
           <p className="text-sm text-muted-foreground">
-            Link sent to {sentTo}. Open it on this device. If nothing arrives, check spam.
+            Link sent to {sentTo}. Open it — even from your mail app. If nothing arrives, check spam.
           </p>
         ) : null}
         <Button type="submit" className="h-11 w-full" disabled={pending}>

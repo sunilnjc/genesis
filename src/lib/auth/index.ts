@@ -15,6 +15,7 @@ export { getSession, getUser, getUserId } from "@/lib/auth/session"
 export { getSessionUserId, type AuthStatus, type RiteStackAuth } from "@/lib/auth/types"
 export {
   AUTH_CALLBACK_PATH,
+  AUTH_ERROR_PATH,
   hostedRequiresLogin,
   isBrowserLocalhost,
   isSupabaseConfigured,
@@ -22,3 +23,11 @@ export {
   subscriptionListMode,
   type SubscriptionListMode,
 } from "@/lib/auth/config"
+export {
+  authErrorPath,
+  classifyAuthFailure,
+  friendlyAuthError,
+  parseAuthCallbackSearch,
+  type AuthErrorReason,
+  type ParsedAuthCallback,
+} from "@/lib/auth/callback"
