@@ -48,7 +48,9 @@ import { StorageError } from "@/lib/storage"
 import { useGraveyardStore } from "@/lib/use-graveyard-store"
 import type { Decision, Subscription, SubscriptionDraft } from "@/lib/types"
 import { ToolMark } from "@/components/tool-mark"
+import { PaywallCard, TrialBanner } from "@/components/paywall"
 import { cn } from "@/lib/utils"
+import { useEntitlement } from "@/lib/use-entitlement"
 import { pathForView, pathFromHash, viewFromPathname, type AppView } from "@/lib/views"
 
 function decisionBadge(decision: Decision) {
@@ -78,6 +80,13 @@ function subscribeHydration() {
 export function GraveyardApp() {
   const today = todayISO()
   const { current, replace, reset } = useGraveyardStore()
+  const {
+    status: access,
+    error: billingError,
+    checkoutBusy,
+    unlock,
+  } = useEntitlement()
+  const ritual = access.ritual
   const hydrated = useSyncExternalStore(subscribeHydration, () => true, () => false)
   const [actionError, setActionError] = useState<string | null>(null)
   const [formOpen, setFormOpen] = useState(false)
@@ -166,6 +175,7 @@ export function GraveyardApp() {
   }
 
   function decide(id: string, decision: Decision) {
+    if (!ritual) return
     const now = new Date().toISOString()
     const target = subscriptions.find((row) => row.id === id)
     if (!target) return
@@ -314,6 +324,19 @@ export function GraveyardApp() {
           </Alert>
         ) : null}
 
+        {access.state === "trial" ? <TrialBanner status={access} /> : null}
+        {access.state === "paywall" && view === "inventory" ? (
+          <Alert>
+            <AlertTitle>Ritual locked</AlertTitle>
+            <AlertDescription>
+              The list stays free. Keep / cut / pause, cancel URLs, and reminders unlock with the $14 pack — open Decide.
+            </AlertDescription>
+          </Alert>
+        ) : null}
+        {access.state === "paywall" && view === "decide" ? (
+          <PaywallCard status={access} error={billingError} busy={checkoutBusy} onUnlock={() => void unlock()} />
+        ) : null}
+
         {!hydrated ? (
           <div className="space-y-2">
             <div className="h-24 animate-pulse rounded-lg bg-muted" />
@@ -343,6 +366,7 @@ export function GraveyardApp() {
             <QueueSection
               today={today}
               rows={queue}
+              ritual={ritual}
               onDecide={decide}
               onEdit={openEdit}
             />
@@ -384,6 +408,7 @@ export function GraveyardApp() {
             <InventorySection
               today={today}
               rows={subscriptions}
+              ritual={ritual}
               onEdit={openEdit}
               onRemove={remove}
             />
@@ -482,11 +507,13 @@ function Stat({
 function QueueSection({
   today,
   rows,
+  ritual,
   onDecide,
   onEdit,
 }: {
   today: string
   rows: Subscription[]
+  ritual: boolean
   onDecide: (id: string, decision: Decision) => void
   onEdit: (row: Subscription) => void
 }) {
@@ -517,6 +544,7 @@ function QueueSection({
                 key={row.id}
                 row={row}
                 today={today}
+                ritual={ritual}
                 onDecide={onDecide}
                 onEdit={onEdit}
               />
@@ -538,7 +566,7 @@ function QueueSection({
                 {rows.map((row) => (
                   <TableRow key={row.id}>
                     <TableCell>
-                      <NameCell row={row} />
+                      <NameCell row={row} ritual={ritual} />
                     </TableCell>
                     <TableCell className="text-right font-mono tabular-nums">
                       {formatMoney(row.monthlyCost)}
@@ -565,7 +593,11 @@ function QueueSection({
                       <ReasonBadges row={row} today={today} />
                     </TableCell>
                     <TableCell className="text-right">
-                      <DecisionActions row={row} onDecide={onDecide} onEdit={onEdit} />
+                      {ritual ? (
+                        <DecisionActions row={row} onDecide={onDecide} onEdit={onEdit} />
+                      ) : (
+                        <span className="text-xs text-muted-foreground">Locked</span>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -581,11 +613,13 @@ function QueueSection({
 function QueueCard({
   row,
   today,
+  ritual,
   onDecide,
   onEdit,
 }: {
   row: Subscription
   today: string
+  ritual: boolean
   onDecide: (id: string, decision: Decision) => void
   onEdit: (row: Subscription) => void
 }) {
@@ -606,8 +640,8 @@ function QueueCard({
       </CardHeader>
       <CardContent className="space-y-3">
         <ReasonBadges row={row} today={today} />
-        <CancelLink row={row} />
-        <HugeDecisionActions row={row} onDecide={onDecide} />
+        <CancelLink row={row} ritual={ritual} />
+        {ritual ? <HugeDecisionActions row={row} onDecide={onDecide} /> : null}
         <Button size="sm" variant="ghost" className="h-8 px-0 text-muted-foreground" onClick={() => onEdit(row)}>
           Edit
         </Button>
@@ -619,11 +653,13 @@ function QueueCard({
 function InventorySection({
   today,
   rows,
+  ritual,
   onEdit,
   onRemove,
 }: {
   today: string
   rows: Subscription[]
+  ritual: boolean
   onEdit: (row: Subscription) => void
   onRemove: (id: string) => void
 }) {
@@ -640,6 +676,7 @@ function InventorySection({
             key={row.id}
             row={row}
             today={today}
+            ritual={ritual}
             onEdit={onEdit}
           />
         ))}
@@ -661,7 +698,7 @@ function InventorySection({
             {rows.map((row) => (
               <TableRow key={row.id} className={row.decision === "cut" ? "opacity-60" : undefined}>
                 <TableCell>
-                  <NameCell row={row} />
+                  <NameCell row={row} ritual={ritual} />
                 </TableCell>
                 <TableCell className="text-muted-foreground">{row.category}</TableCell>
                 <TableCell className="text-right font-mono tabular-nums">
@@ -692,7 +729,7 @@ function InventorySection({
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={() => onEdit(row)}>Edit</DropdownMenuItem>
-                      {row.cancelUrl ? (
+                      {row.cancelUrl && ritual ? (
                         <DropdownMenuItem onClick={() => openCancelUrl(row.cancelUrl)}>
                           Open cancel URL
                         </DropdownMenuItem>
@@ -716,10 +753,12 @@ function InventorySection({
 function InventoryCard({
   row,
   today,
+  ritual,
   onEdit,
 }: {
   row: Subscription
   today: string
+  ritual: boolean
   onEdit: (row: Subscription) => void
 }) {
   return (
@@ -741,7 +780,7 @@ function InventoryCard({
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col items-start gap-2">
-        <CancelLink row={row} />
+        <CancelLink row={row} ritual={ritual} />
         <Button size="sm" variant="ghost" className="h-8 px-0 text-muted-foreground" onClick={() => onEdit(row)}>
           Edit
         </Button>
@@ -750,7 +789,7 @@ function InventoryCard({
   )
 }
 
-function NameCell({ row }: { row: Subscription }) {
+function NameCell({ row, ritual }: { row: Subscription; ritual: boolean }) {
   return (
     <div className="min-w-32">
       <div className="flex items-center gap-1.5">
@@ -762,20 +801,25 @@ function NameCell({ row }: { row: Subscription }) {
           </Badge>
         ) : null}
       </div>
-      <CancelLink row={row} className="text-[0.625rem]" />
+      <CancelLink row={row} ritual={ritual} className="text-[0.625rem]" />
     </div>
   )
 }
 
 function CancelLink({
   row,
+  ritual,
   className,
 }: {
   row: Subscription
+  ritual: boolean
   className?: string
 }) {
   if (!row.cancelUrl) {
     return <span className={className ?? "text-xs text-muted-foreground"}>No cancel URL</span>
+  }
+  if (!ritual) {
+    return <span className={className ?? "text-xs text-muted-foreground"}>Cancel URL locked</span>
   }
   return (
     <a

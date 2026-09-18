@@ -20,7 +20,8 @@ Hosted on **Cloudflare** via OpenNext (`@opennextjs/cloudflare`). Wrangler worke
 - Default list is the founder’s confirmed tools (not samples): OpenAI Pro+ $200, Cursor Pro $20, Claude $20, Cloudflare workers $10, Twitter (X) $95, CoinGecko $100 — **$445/mo** if all stay active
 - Local Simple Icons (and a CoinGecko gecko mark) on matching names, in brand color; unknown tools get a letter, not a fake logo
 - Optional extra rows from **Load sample stack** stay labeled **Sample**
-- Data stays in the browser (`localStorage`). No auth, no Plaid, no auto-cancel.
+- Data stays in the browser (`localStorage`) until a *new* Supabase exists. No Plaid, no auto-cancel.
+- **$14 one-time pack** (Stripe Checkout, test mode): 7 days of full ritual after signup, then paywall. The list stays free. See [Payments](#payments).
 
 ## Run locally
 
@@ -30,7 +31,41 @@ npm install
 npm run dev
 ```
 
-App: [http://127.0.0.1:4317](http://127.0.0.1:4317)
+App: [http://127.0.0.1:4317](http://127.0.0.1:4317) (use another port if 4317 is already taken)
+
+## Payments
+
+7 days of keep / cut / pause, cancel URLs, and pause reminders after signup. Day 8: paywall until the **$14 one-time** RiteStack pack is paid. Viewing and editing the inventory list stays free. This is Checkout `mode=payment`, not a subscription trial. The optional $6/mo SKU is not wired.
+
+Auth is not on `main` yet. The SQL assumes Supabase `auth.uid()` and starts `profiles.trial_ends_at` on signup. Until magic-link lands, localhost stays unlocked (founder localStorage). Preview the paywall at `/?preview=paywall` (Decide) or `/inventory?preview=paywall` (Inventory).
+
+### Stripe test mode
+
+1. Copy `.env.example` → `.env.local`.
+2. Paste a **test** secret (`sk_test_…`) from [Stripe Dashboard → API keys](https://dashboard.stripe.com/test/apikeys). Never commit it. Never use `sk_live_`.
+3. `npm run stripe:setup` creates the $14 test product/price and a webhook to `https://ritestack.app/api/billing/webhook`.
+4. Cloudflare Worker secrets (same names): `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, optional `STRIPE_PRICE_ID`. Public: `NEXT_PUBLIC_APP_URL=https://ritestack.app`. When auth exists: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`.
+5. Apply `supabase/migrations/20260918190000_profiles_trial.sql` in the RiteStack Supabase project (not Job Pursuit).
+
+### Test cards
+
+| Card | Result |
+|---|---|
+| `4242 4242 4242 4242` | Success |
+| `4000 0000 0000 0002` | Decline |
+| Any future expiry, any 3-digit CVC, any ZIP | |
+
+Checkout runs in Stripe test mode. No real charges.
+
+### What is gated
+
+| Free | After trial, until $14 |
+|---|---|
+| Inventory list, add / edit / delete, monthly burn | Keep / cut / pause |
+| Decide-by queue **viewing** | Cancel URL links |
+| | Pause reminders (30-day) |
+
+SQL: `supabase/migrations/20260918190000_profiles_trial.sql` (`trial_ends_at`, `pack_paid_at`). Grant is webhook (`checkout.session.completed`) or a verified session retrieve on return — never a `?paid=true` query flag.
 
 ## Add to Home Screen
 
