@@ -114,8 +114,9 @@ export function applyFounderSeed(store: GraveyardStore): GraveyardStore {
   }
 }
 
-export function loadStore(): GraveyardStore {
+export function loadStore(options?: { seedFounder?: boolean }): GraveyardStore {
   if (typeof window === "undefined") return emptyStore()
+  const seedFounder = options?.seedFounder !== false
 
   let raw: string | null
   try {
@@ -128,6 +129,7 @@ export function loadStore(): GraveyardStore {
   }
 
   if (!raw) {
+    if (!seedFounder) return emptyStore()
     const seeded = seededStore()
     try {
       saveStore(seeded)
@@ -145,6 +147,13 @@ export function loadStore(): GraveyardStore {
     const existing = parsed.subscriptions
     if (!existing.every(isSubscription)) {
       throw new Error("invalid row")
+    }
+    if (!seedFounder) {
+      return {
+        version: 1,
+        seedVersion: parsed.seedVersion,
+        subscriptions: existing,
+      }
     }
     const next = applyFounderSeed({
       version: 1,

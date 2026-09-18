@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { GraveyardApp } from "@/components/graveyard-app"
+import { HostedApp } from "@/components/hosted-app"
 
 export const metadata: Metadata = {
   title: "Inventory · RiteStack",
@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 }
 
 export default function InventoryPage() {
-  return <GraveyardApp />
+  return <HostedApp />
 }

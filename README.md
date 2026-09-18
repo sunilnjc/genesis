@@ -8,7 +8,13 @@ Keep, cut, or pause your AI/dev tool stack — last-used and a cancel URL. The l
 
 Dark by default (Midday-quiet). Brand marks use each product’s Simple Icons / official hex — not white or `currentColor`. Mobile is a stacked-card app shell with a PWA so you can Add to Home Screen.
 
-Hosted on **Cloudflare** via OpenNext (`@opennextjs/cloudflare`). Wrangler worker name: **`ritestack`**. Not Vercel. Do not reuse Job Pursuit’s Workers, Pages projects, DNS zones, or Supabase. Data is still `localStorage` until a *new* Supabase exists. `stackburn.app` will 301 → ritestack.app later.
+Hosted on **Cloudflare** via OpenNext (`@opennextjs/cloudflare`). Wrangler worker name: **`ritestack`**. Not Vercel. Do not reuse Job Pursuit’s Workers, Pages projects, DNS zones, or Supabase.
+
+**Auth:** hosted URLs require a magic-link session. Rows live in a **new** Supabase project (`subscriptions.user_id` + RLS `auth.uid()`). Localhost keeps the on-device list (founder $445 seed) until you sign in. New hosted accounts start **empty** — the founder stack is not a global default.
+
+Other agents: import `{ useAuth, getUserId, getSession }` from `@/lib/auth`. `userId` is `auth.uid()`.
+
+`stackburn.app` 301s to `ritestack.app`.
 
 ## What it does
 
@@ -20,7 +26,7 @@ Hosted on **Cloudflare** via OpenNext (`@opennextjs/cloudflare`). Wrangler worke
 - Default list is the founder’s confirmed tools (not samples): OpenAI Pro+ $200, Cursor Pro $20, Claude $20, Cloudflare workers $10, Twitter (X) $95, CoinGecko $100 — **$445/mo** if all stay active
 - Local Simple Icons (and a CoinGecko gecko mark) on matching names, in brand color; unknown tools get a letter, not a fake logo
 - Optional extra rows from **Load sample stack** stay labeled **Sample**
-- Data stays in the browser (`localStorage`) until a *new* Supabase exists. No Plaid, no auto-cancel.
+- Data: **localhost** uses `localStorage` (founder seed). **Hosted** requires login and loads only that user’s rows from Supabase. No `service_role` in the browser. No Plaid, no auto-cancel.
 - **$14 one-time pack** (Stripe Checkout, test mode): 7 days of full ritual after signup, then paywall. The list stays free. See [Payments](#payments).
 
 ## Run locally
@@ -67,6 +73,16 @@ Checkout runs in Stripe test mode. No real charges.
 
 SQL: `supabase/migrations/20260918190000_profiles_trial.sql` (`trial_ends_at`, `pack_paid_at`). Grant is webhook (`checkout.session.completed`) or a verified session retrieve on return — never a `?paid=true` query flag.
 
+Copy `.env.example` to `.env.local` with the **ritestack** Supabase URL + anon key (not Job Pursuit). Localhost still runs without those keys.
+
+### Isolation
+
+```bash
+node scripts/isolation-test.mjs
+```
+
+See [docs/isolation-test.md](docs/isolation-test.md). Two JWTs must not see each other’s `subscriptions`.
+
 ## Add to Home Screen
 
 RiteStack is a PWA named **RiteStack** (standalone, dark `#101010` icons).
@@ -86,14 +102,14 @@ npx wrangler login
 npm run deploy
 ```
 
-`npm run deploy` runs `opennextjs-cloudflare build` then `opennextjs-cloudflare deploy`. Production branch is `main`.
+`npm run deploy` runs `opennextjs-cloudflare build` then `opennextjs-cloudflare deploy`. Production branch is `main`. Bake `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` into the build (`.env.local` locally, GitHub secrets in CI). Never commit `service_role`.
 
 ### Dashboard clicks (custom domain)
 
 1. Cloudflare dashboard → **Workers & Pages** → worker **`ritestack`** (not any Job Pursuit worker/project).
 2. **Settings → Domains & Routes → Add** → `ritestack.app`.
 3. If `ritestack.app` is still on the older Pages project of the same name, remove it there first, then add it to this Worker.
-4. Leave Job Pursuit DNS zones alone. **stackburn.app** stays a later 301 to ritestack.app — do not attach it yet.
+4. Leave Job Pursuit DNS zones alone. Worker **`stackburn-redirect`** 301s `stackburn.app` → `https://ritestack.app`.
 
 GitHub Actions on `main` deploys the same Worker when `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` are set as repo secrets.
 

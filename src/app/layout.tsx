@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
+import { AppProviders } from "@/components/app-providers";
 import { PwaRegister } from "@/components/pwa-register";
 import { ThemeProvider } from "@/components/theme-provider";
 import { cn } from "@/lib/utils";
@@ -66,7 +67,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <ThemeProvider>
           <PwaRegister />
-          {children}
+          <AppProviders>{children}</AppProviders>
         </ThemeProvider>
       </body>
     </html>

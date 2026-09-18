@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react"
+import { useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { Alert02Icon, Add01Icon, InboxIcon, Link01Icon, MoreHorizontalIcon, PauseIcon, ScissorIcon, Tick02Icon } from "@hugeicons/core-free-icons"
@@ -77,9 +77,13 @@ function subscribeHydration() {
   return () => {}
 }
 
-export function GraveyardApp() {
+export function GraveyardApp({
+  headerAccessory,
+}: {
+  headerAccessory?: ReactNode
+}) {
   const today = todayISO()
-  const { current, replace, reset } = useGraveyardStore()
+  const { current, replace, reset, loading } = useGraveyardStore()
   const {
     status: access,
     error: billingError,
@@ -105,10 +109,10 @@ export function GraveyardApp() {
     else if (window.location.hash) router.replace(pathname)
   }, [pathname, router])
 
-  function withSave(updater: (current: Subscription[]) => Subscription[]) {
+  async function withSave(updater: (current: Subscription[]) => Subscription[]) {
     const next = updater(subscriptions)
     try {
-      replace(next)
+      await replace(next)
       setActionError(null)
       return true
     } catch (error) {
@@ -132,9 +136,9 @@ export function GraveyardApp() {
     (row) => row.decision === "undecided"
   ).length
 
-  function saveDraft(draft: SubscriptionDraft) {
+  async function saveDraft(draft: SubscriptionDraft) {
     const now = new Date().toISOString()
-    const saved = withSave((current) => {
+    const saved = await withSave((current) => {
       if (editing) {
         return current.map((row) =>
           row.id === editing.id
@@ -180,7 +184,7 @@ export function GraveyardApp() {
     const target = subscriptions.find((row) => row.id === id)
     if (!target) return
     if (decision === "cut" && target.cancelUrl) openCancelUrl(target.cancelUrl)
-    withSave((current) =>
+    void withSave((current) =>
       current.map((row) => {
         if (row.id !== id) return row
         return {
@@ -195,22 +199,22 @@ export function GraveyardApp() {
   }
 
   function remove(id: string) {
-    withSave((current) => current.filter((row) => row.id !== id))
+    void withSave((current) => current.filter((row) => row.id !== id))
   }
 
   function loadSample() {
-    withSave((current) => {
+    void withSave((current) => {
       const withoutSample = current.filter((row) => !row.isSample)
       return [...withoutSample, ...sampleStack()]
     })
   }
 
   function stripSample() {
-    withSave((current) => current.filter((row) => !row.isSample))
+    void withSave((current) => current.filter((row) => !row.isSample))
   }
 
   function resetStorage() {
-    reset()
+    void reset()
     setActionError(null)
   }
 
@@ -226,7 +230,21 @@ export function GraveyardApp() {
     setActionError(null)
   }
 
-  if (hydrated && loadError) {
+  if (!hydrated || loading) {
+    return (
+      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 px-4 py-6">
+        <div className="h-8 w-48 animate-pulse rounded-md bg-muted" />
+        <div className="grid gap-2 sm:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div key={index} className="h-20 animate-pulse rounded-lg bg-muted" />
+          ))}
+        </div>
+        <p className="text-xs text-muted-foreground">Loading your list…</p>
+      </div>
+    )
+  }
+
+  if (loadError) {
     return (
       <main className="mx-auto flex w-full max-w-lg flex-1 flex-col justify-center gap-4 px-4 py-10">
         <Alert variant="destructive">
@@ -245,9 +263,12 @@ export function GraveyardApp() {
       data-view={view}
     >
       <header className="sticky top-0 z-20 border-b border-foreground/10 bg-background/95 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 backdrop-blur md:hidden">
-        <p className="text-[0.625rem] font-medium tracking-[0.14em] text-muted-foreground uppercase">
-          RiteStack
-        </p>
+        <div className="flex items-start justify-between gap-2">
+          <p className="text-[0.625rem] font-medium tracking-[0.14em] text-muted-foreground uppercase">
+            RiteStack
+          </p>
+          {headerAccessory}
+        </div>
         {view === "inventory" ? (
           <>
             <p className="font-mono text-3xl font-medium tabular-nums tracking-tight">
@@ -287,19 +308,22 @@ export function GraveyardApp() {
                   : "The list you pay for. Add, edit, and see monthly burn. Ritual is Decide."}
               </p>
             </div>
-            {view === "inventory" && hydrated ? (
-              <div className="flex flex-wrap gap-2">
-                {subscriptions.length === 0 ? null : (
-                  <Button variant="outline" onClick={loadSample}>
-                    Load sample stack
+            <div className="flex flex-col items-stretch gap-2 sm:items-end">
+              {headerAccessory}
+              {view === "inventory" && hydrated ? (
+                <div className="flex flex-wrap gap-2">
+                  {subscriptions.length === 0 ? null : (
+                    <Button variant="outline" onClick={loadSample}>
+                      Load sample stack
+                    </Button>
+                  )}
+                  <Button onClick={openAdd}>
+                    <HugeiconsIcon icon={Add01Icon} strokeWidth={2} data-icon="inline-start" />
+                    Add subscription
                   </Button>
-                )}
-                <Button onClick={openAdd}>
-                  <HugeiconsIcon icon={Add01Icon} strokeWidth={2} data-icon="inline-start" />
-                  Add subscription
-                </Button>
-              </div>
-            ) : null}
+                </div>
+              ) : null}
+            </div>
           </div>
           <ViewTabs view={view} queueCount={queue.length} />
         </header>
