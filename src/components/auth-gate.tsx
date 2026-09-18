@@ -32,6 +32,7 @@ export function LoginScreen() {
   return (
     <main
       data-ritestack-signin="unsigned"
+      data-ritestack-screen="login"
       className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-6 px-4 py-10"
     >
       <div className="space-y-3">
