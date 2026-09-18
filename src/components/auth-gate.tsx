@@ -2,37 +2,12 @@
 
 import { useState } from "react"
 import { useAuth } from "@/lib/auth"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
-import {
-  SIGNIN_ACCESS,
-  SIGNIN_ACCESS_TITLE,
-  SIGNIN_ACTIONS,
-  SIGNIN_BRAND,
-  SIGNIN_FORM_HINT,
-  SIGNIN_FORM_PENDING,
-  SIGNIN_FORM_SENDING,
-  SIGNIN_FORM_SENT,
-  SIGNIN_FORM_SUBMIT,
-  SIGNIN_FORM_TITLE,
-  SIGNIN_HEADLINE,
-  SIGNIN_LEDE,
-  SIGNIN_PROBLEM,
-  SIGNIN_PROBLEM_TITLE,
-  SIGNIN_RITUAL,
-  SIGNIN_RITUAL_TITLE,
-  SIGNIN_ROW_LEGEND,
-  SIGNIN_SPLIT,
-  SIGNIN_SPLIT_TITLE,
-  SIGNIN_WALKAWAY,
-  SIGNIN_WALKAWAY_TITLE,
-} from "@/lib/signin-copy"
+import { SIGNIN_BRAND, SIGNIN_CONTEXT, SIGNIN_HEADLINE } from "@/lib/signin-copy"
 
-export function LoginScreen({ sessionPending = false }: { sessionPending?: boolean }) {
+export function LoginScreen() {
   const auth = useAuth()
   const [email, setEmail] = useState("")
   const [sentTo, setSentTo] = useState<string | null>(null)
@@ -56,115 +31,39 @@ export function LoginScreen({ sessionPending = false }: { sessionPending?: boole
   return (
     <main
       data-ritestack-signin="unsigned"
-      className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-8 pb-[max(2rem,env(safe-area-inset-bottom))] md:py-12"
+      className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-6 px-4 py-10"
     >
-      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(18rem,22.5rem)] lg:items-start lg:gap-x-16">
-        <header className="max-w-2xl space-y-3">
-          <p className="text-[0.625rem] font-medium tracking-[0.14em] text-muted-foreground uppercase">
-            {SIGNIN_BRAND}
-          </p>
-          <h1 className="font-heading text-[1.65rem] leading-tight font-medium tracking-tight text-pretty sm:text-3xl">
-            {SIGNIN_HEADLINE}
-          </h1>
-          <p className="text-sm leading-relaxed text-muted-foreground text-pretty">{SIGNIN_LEDE}</p>
-        </header>
-
-        <aside className="mt-8 lg:col-start-2 lg:row-span-2 lg:mt-0 lg:sticky lg:top-8">
-          <Card className="text-sm/relaxed">
-            <CardHeader className="border-b">
-              <CardTitle className="font-heading text-base">{SIGNIN_FORM_TITLE}</CardTitle>
-              <CardDescription>{SIGNIN_FORM_HINT}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {sessionPending ? (
-                <p className="mb-3 text-xs text-muted-foreground">{SIGNIN_FORM_PENDING}</p>
-              ) : null}
-              <form className="space-y-3" onSubmit={sendLink}>
-                <div className="space-y-1">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    autoComplete="email"
-                    required
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    placeholder="you@studio.example"
-                    className="h-10 text-sm"
-                  />
-                </div>
-                {error ? <p className="text-sm text-destructive">{error}</p> : null}
-                {sentTo ? (
-                  <p className="text-sm text-muted-foreground">
-                    Link sent to {sentTo}. {SIGNIN_FORM_SENT}
-                  </p>
-                ) : null}
-                <Button type="submit" className="h-11 w-full text-sm" disabled={pending || sessionPending}>
-                  {pending ? SIGNIN_FORM_SENDING : SIGNIN_FORM_SUBMIT}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-        </aside>
-
-        <div className="mt-10 max-w-2xl space-y-8 lg:col-start-1 lg:mt-10">
-          <section className="space-y-2">
-            <h2 className="font-heading text-sm font-medium">{SIGNIN_PROBLEM_TITLE}</h2>
-            <p className="text-sm leading-relaxed text-muted-foreground text-pretty">{SIGNIN_PROBLEM}</p>
-          </section>
-
-          <section className="space-y-3">
-            <h2 className="font-heading text-sm font-medium">{SIGNIN_RITUAL_TITLE}</h2>
-            <p className="text-sm leading-relaxed text-muted-foreground text-pretty">{SIGNIN_RITUAL}</p>
-            <div className="overflow-hidden rounded-lg ring-1 ring-foreground/10">
-              <p className="border-b border-foreground/10 bg-muted/40 px-3 py-2 text-[0.625rem] font-medium tracking-[0.08em] text-muted-foreground uppercase">
-                One decide-by row
-              </p>
-              <div className="flex flex-wrap gap-1.5 px-3 py-2.5">
-                {SIGNIN_ROW_LEGEND.map((item) => (
-                  <Badge key={item} variant="outline">
-                    {item}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-            <ul className="grid gap-2 sm:grid-cols-3">
-              {SIGNIN_ACTIONS.map((action) => (
-                <li
-                  key={action.name}
-                  className="rounded-lg bg-card px-3 py-3 ring-1 ring-foreground/10"
-                >
-                  <Badge
-                    variant={
-                      action.name === "Cut" ? "destructive" : action.name === "Pause" ? "secondary" : "outline"
-                    }
-                  >
-                    {action.name}
-                  </Badge>
-                  <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{action.meaning}</p>
-                </li>
-              ))}
-            </ul>
-          </section>
-
-          <section className="space-y-2">
-            <h2 className="font-heading text-sm font-medium">{SIGNIN_WALKAWAY_TITLE}</h2>
-            <p className="text-sm leading-relaxed text-muted-foreground text-pretty">{SIGNIN_WALKAWAY}</p>
-          </section>
-
-          <Separator />
-
-          <section className="space-y-2">
-            <h2 className="font-heading text-sm font-medium">{SIGNIN_SPLIT_TITLE}</h2>
-            <p className="text-sm leading-relaxed text-muted-foreground text-pretty">{SIGNIN_SPLIT}</p>
-          </section>
-
-          <section className="space-y-2">
-            <h2 className="font-heading text-sm font-medium">{SIGNIN_ACCESS_TITLE}</h2>
-            <p className="text-sm leading-relaxed text-muted-foreground text-pretty">{SIGNIN_ACCESS}</p>
-          </section>
-        </div>
+      <div className="space-y-2">
+        <p className="text-[0.625rem] font-medium tracking-[0.14em] text-muted-foreground uppercase">
+          {SIGNIN_BRAND}
+        </p>
+        <h1 className="font-heading text-2xl font-medium tracking-tight">{SIGNIN_HEADLINE}</h1>
+        <p className="text-sm text-muted-foreground">{SIGNIN_CONTEXT}</p>
       </div>
+      <form className="space-y-3" onSubmit={sendLink}>
+        <div className="space-y-1">
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            type="email"
+            autoComplete="email"
+            required
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            placeholder="you@studio.example"
+            className="h-10"
+          />
+        </div>
+        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        {sentTo ? (
+          <p className="text-sm text-muted-foreground">
+            Link sent to {sentTo}. Open it on this device. If nothing arrives, check spam.
+          </p>
+        ) : null}
+        <Button type="submit" className="h-11 w-full" disabled={pending}>
+          {pending ? "Sending link…" : "Email me a sign-in link"}
+        </Button>
+      </form>
     </main>
   )
 }

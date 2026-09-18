@@ -7,12 +7,6 @@ import { useAuth } from "@/lib/auth"
 export function HostedApp() {
   const auth = useAuth()
 
-  // Hosted unsigned (and SSR): tell the product story immediately. Do not paint
-  // the app skeleton or an empty inventory — that looked like a shared notebook.
-  if (auth.configured && !auth.isLocalhost && auth.status !== "signed-in") {
-    return <LoginScreen sessionPending={auth.status === "loading"} />
-  }
-
   if (auth.status === "loading") {
     return (
       <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 px-4 py-6">
@@ -25,6 +19,10 @@ export function HostedApp() {
         <p className="text-xs text-muted-foreground">Checking session…</p>
       </div>
     )
+  }
+
+  if (auth.configured && !auth.isLocalhost && auth.status !== "signed-in") {
+    return <LoginScreen />
   }
 
   if (auth.configured === false && !auth.isLocalhost) {
