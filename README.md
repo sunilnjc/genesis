@@ -16,7 +16,7 @@ Hosted on **Cloudflare** via OpenNext (`@opennextjs/cloudflare`). Wrangler worke
 - Last-used as a date you set, or not set
 - Keep / cut / pause, with pause reminding in 30 days
 - Dashboard: monthly burn, $ cut this pass, decide-by queue
-- **Decide** (home): only tools that need a keep / cut / pause. **Inventory**: full list, add/edit, burn. Same row never on both screens at once.
+- **Decide** (`/`): only tools that need a keep / cut / pause. **Inventory** (`/inventory`): full list, add/edit, burn. The two lists never render on the same page.
 - Default list is the founder’s confirmed tools (not samples): OpenAI Pro+ $200, Cursor Pro $20, Claude $20, Cloudflare workers $10, Twitter (X) $95, CoinGecko $100 — **$445/mo** if all stay active
 - Local Simple Icons (and a CoinGecko gecko mark) on matching names, in brand color; unknown tools get a letter, not a fake logo
 - Optional extra rows from **Load sample stack** stay labeled **Sample**
@@ -40,7 +40,7 @@ RiteStack is a PWA named **RiteStack** (standalone, dark `#101010` icons).
 
 **Android (Chrome):** Open the app URL → menu → **Install app** / **Add to Home Screen**.
 
-On a phone you’ll get Decide (home, fat Keep / Cut / Pause) and Inventory (list + burn) as two tabs. Desktop uses the same two tabs. Same subscription never appears twice on one screen.
+On a phone, bottom tabs switch **Decide** (`/`) and **Inventory** (`/inventory`). Desktop uses the same two tabs in the header. Home never shows the full list; Inventory never shows the keep/cut/pause queue. Old `#inventory` / `#decide` hashes redirect to those routes.
 
 ## Deploy on Cloudflare
 
