@@ -10,6 +10,11 @@ export type Brand = {
    */
   plate?: boolean
   aliases: string[]
+  /**
+   * Official manage-billing / cancel page for this product. Omitted when the
+   * vendor has no stable public URL we can cite.
+   */
+  cancelUrl?: string
 }
 
 function isDarkHex(hex: string): boolean {
@@ -26,7 +31,8 @@ function brand(
   slug: string,
   title: string,
   hex: string,
-  aliases: string[]
+  aliases: string[],
+  cancelUrl?: string
 ): Brand {
   return {
     slug,
@@ -35,44 +41,159 @@ function brand(
     hex,
     plate: isDarkHex(hex),
     aliases,
+    ...(cancelUrl ? { cancelUrl } : {}),
   }
 }
 
 /**
  * Local Simple Icons SVGs (CC0) painted with each brand’s SI hex, plus a
  * CoinGecko gecko (no SI slug) in the mascot green/yellow. No logo CDN at runtime.
+ *
+ * `cancelUrl` values are official vendor billing/cancel pages only — never guessed.
  */
 export const BRAND_CATALOG: Brand[] = [
-  brand("openai", "OpenAI", "412991", ["openai", "chatgpt", "gpt"]),
-  brand("claude", "Claude", "D97757", ["claude"]),
-  brand("anthropic", "Anthropic", "191919", ["anthropic"]),
-  brand("cursor", "Cursor", "000000", ["cursor"]),
-  brand("cloudflare", "Cloudflare", "F38020", ["cloudflare"]),
-  brand("cloudflareworkers", "Cloudflare Workers", "F38020", ["cloudflare workers"]),
-  brand("x", "X", "000000", ["x", "twitter"]),
+  brand(
+    "openai",
+    "OpenAI",
+    "412991",
+    ["openai", "chatgpt", "gpt"],
+    "https://chatgpt.com/account/manage"
+  ),
+  brand(
+    "claude",
+    "Claude",
+    "D97757",
+    ["claude"],
+    "https://claude.ai/settings/billing"
+  ),
+  brand(
+    "anthropic",
+    "Anthropic",
+    "191919",
+    ["anthropic"],
+    "https://console.anthropic.com/settings/billing"
+  ),
+  brand(
+    "cursor",
+    "Cursor",
+    "000000",
+    ["cursor"],
+    "https://cursor.com/dashboard/billing"
+  ),
+  brand(
+    "cloudflare",
+    "Cloudflare",
+    "F38020",
+    ["cloudflare"],
+    "https://dash.cloudflare.com/?to=/:account/billing"
+  ),
+  brand(
+    "cloudflareworkers",
+    "Cloudflare Workers",
+    "F38020",
+    ["cloudflare workers"],
+    "https://dash.cloudflare.com/?to=/:account/billing"
+  ),
+  brand("x", "X", "000000", ["x", "twitter"], "https://x.com/settings/subscription"),
   {
     slug: "coingecko",
     title: "CoinGecko",
     src: "/brands/coingecko.svg",
     hex: "40C000",
     aliases: ["coingecko"],
+    cancelUrl: "https://www.coingecko.com/en/developers/dashboard",
   },
-  brand("github", "GitHub", "181717", ["github", "copilot"]),
-  brand("notion", "Notion", "000000", ["notion"]),
-  brand("figma", "Figma", "F24E1E", ["figma"]),
-  brand("linear", "Linear", "5E6AD2", ["linear"]),
-  brand("vercel", "Vercel", "000000", ["vercel"]),
-  brand("railway", "Railway", "0B0D0E", ["railway"]),
-  brand("grammarly", "Grammarly", "027E6F", ["grammarly"]),
-  brand("supabase", "Supabase", "3FCF8E", ["supabase"]),
-  brand("resend", "Resend", "000000", ["resend"]),
-  brand("perplexity", "Perplexity", "1FB8CD", ["perplexity"]),
+  brand(
+    "github",
+    "GitHub",
+    "181717",
+    ["github", "copilot"],
+    "https://github.com/settings/billing"
+  ),
+  brand(
+    "notion",
+    "Notion",
+    "000000",
+    ["notion"],
+    "https://www.notion.so/my-account"
+  ),
+  brand(
+    "figma",
+    "Figma",
+    "F24E1E",
+    ["figma"],
+    "https://www.figma.com/settings"
+  ),
+  brand(
+    "linear",
+    "Linear",
+    "5E6AD2",
+    ["linear"],
+    "https://linear.app/settings/billing"
+  ),
+  brand(
+    "vercel",
+    "Vercel",
+    "000000",
+    ["vercel"],
+    "https://vercel.com/account/billing"
+  ),
+  brand(
+    "netlify",
+    "Netlify",
+    "00C7B7",
+    ["netlify"],
+    "https://app.netlify.com/user/billing"
+  ),
+  brand(
+    "flydotio",
+    "Fly.io",
+    "24175B",
+    ["fly", "fly.io", "flyio"],
+    "https://fly.io/dashboard/personal/billing"
+  ),
+  brand(
+    "railway",
+    "Railway",
+    "0B0D0E",
+    ["railway"],
+    "https://railway.com/workspace/billing"
+  ),
+  brand(
+    "grammarly",
+    "Grammarly",
+    "027E6F",
+    ["grammarly"],
+    "https://account.grammarly.com/subscription"
+  ),
+  brand(
+    "supabase",
+    "Supabase",
+    "3FCF8E",
+    ["supabase"],
+    "https://supabase.com/dashboard/org/_/billing"
+  ),
+  brand(
+    "resend",
+    "Resend",
+    "000000",
+    ["resend"],
+    "https://resend.com/settings/billing"
+  ),
+  brand(
+    "perplexity",
+    "Perplexity",
+    "1FB8CD",
+    ["perplexity"],
+    "https://www.perplexity.ai/account/details"
+  ),
   {
     slug: "gemini",
     title: "Gemini",
     src: "/brands/googlegemini.svg",
     hex: "8E75B2",
     aliases: ["gemini", "google gemini"],
+    cancelUrl: "https://one.google.com/settings",
   },
 ]
 
@@ -110,6 +231,11 @@ export function matchBrand(name: string): Brand | null {
     return ranked.find((entry) => entry.slug === "cloudflareworkers") ?? ranked[0]
   }
   return ranked[0]
+}
+
+/** Official cancel / manage-billing URL for a typed tool name, if we have one. */
+export function catalogCancelUrl(name: string): string | null {
+  return matchBrand(name)?.cancelUrl ?? null
 }
 
 export function brandInitial(name: string): string {
