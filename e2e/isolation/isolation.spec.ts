@@ -1,4 +1,5 @@
 import { expect, test, type Browser, type BrowserContext, type Page } from "@playwright/test"
+import { playwrightAuthCookies } from "../../src/lib/auth/session-cookie.ts"
 
 type IsoPair = {
   admin: { from: (table: string) => unknown }
@@ -22,12 +23,14 @@ type IsoModule = {
 
 async function injectSession(
   context: BrowserContext,
+  origin: string,
   storageKey: string,
   session: unknown,
   seedKey: string,
   poison: string,
   poisonSeed = false
 ) {
+  await context.addCookies(playwrightAuthCookies(origin, storageKey, session))
   await context.addInitScript(
     ({ storageKey, session, seedKey, poison, poisonSeed }) => {
       window.localStorage.setItem(storageKey, JSON.stringify(session))
@@ -107,6 +110,7 @@ test.describe("hosted two-account isolation", () => {
     const context = await browser.newContext()
     await injectSession(
       context,
+      pair.hostedOrigin,
       pair.storageKey,
       pair.sessionA,
       iso.LOCAL_SEED_KEY,
@@ -128,6 +132,7 @@ test.describe("hosted two-account isolation", () => {
     const context = await browser.newContext()
     await injectSession(
       context,
+      pair.hostedOrigin,
       pair.storageKey,
       pair.sessionB,
       iso.LOCAL_SEED_KEY,
@@ -154,6 +159,8 @@ test.describe("hosted two-account isolation", () => {
       Object.keys(window.localStorage).filter((key) => key.startsWith("sb-") && key.endsWith("-auth-token"))
     )
     expect(authKeys).toEqual([])
+    const authCookies = (await unsigned.cookies()).filter((cookie) => cookie.name.startsWith("sb-") && cookie.name.includes("auth-token"))
+    expect(authCookies).toEqual([])
     expect(new URL(page.url()).origin).toBe(pair.hostedOrigin)
     await unsigned.close()
   })

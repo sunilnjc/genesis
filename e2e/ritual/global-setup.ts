@@ -1,6 +1,7 @@
 import { mkdirSync, writeFileSync } from "node:fs"
 import { dirname, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
+import { playwrightAuthCookies } from "../../src/lib/auth/session-cookie.ts"
 import { createRitualAccount } from "./auth"
 
 export default async function globalSetup() {
@@ -12,7 +13,7 @@ export default async function globalSetup() {
     resolve(dir, ".auth/state.json"),
     `${JSON.stringify(
       {
-        cookies: [],
+        cookies: playwrightAuthCookies("https://ritestack.app", meta.storageKey, session),
         origins: [
           {
             origin: "https://ritestack.app",

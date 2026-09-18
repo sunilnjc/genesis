@@ -12,7 +12,7 @@ Hosted on **Cloudflare** via OpenNext (`@opennextjs/cloudflare`). Wrangler worke
 
 **Auth:** hosted URLs require a magic-link session. Rows live in a **new** Supabase project (`subscriptions.user_id` + RLS `auth.uid()`). Localhost keeps the on-device list (founder $445 seed) until you sign in. New hosted accounts start **empty** — the founder stack is not a global default.
 
-Magic-link HTML lives in `supabase/templates/` (Job Pursuit layout: one-time code + `{{ .ConfirmationURL }}`). **Sends** from `hello@ritestack.app` via Cloudflare Email Sending (`workers/auth-mail`, Supabase Send Email hook). **Verifies** on RiteStack Auth `gmbretmepjxrsmuxvpbn` (`/auth/v1/verify`). Not Job Pursuit, not `supabase.co`’s default mailer once the hook is on.
+Magic-link HTML lives in `supabase/templates/` (Job Pursuit layout: one-time code + `{{ .ConfirmationURL }}`). **Sends** from `hello@ritestack.app` via Cloudflare Email Sending (`workers/auth-mail`, Supabase Send Email hook). The link opens `https://ritestack.app/auth/callback?token_hash=…&type=magiclink`; the app calls `verifyOtp` and stores the session in `@supabase/ssr` cookies. PKCE `code` exchange is a same-browser fallback only. Not Job Pursuit.
 
 DNS for sending is on the **ritestack.app** zone only (`cf-bounce` SPF/DKIM/MX + `_dmarc`). Do not touch stackburn or thejobpursuit. Zone DNS API is not writable from Wrangler OAuth — add the records from `node scripts/apply-auth-mail.mjs --templates` notes / the PR if they are missing. Hook secret: `wrangler secret put SEND_EMAIL_HOOK_SECRET` in `workers/auth-mail`, same value on Auth → Hooks. No Resend key is in this repo.
 
