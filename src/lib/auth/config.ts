@@ -38,4 +38,23 @@ export function hostedRequiresLogin(hostname?: string) {
   return isSupabaseConfigured() && !isBrowserLocalhost(hostname)
 }
 
+/**
+ * Where the subscription list may be read.
+ * Hosted + configured: unsigned visitors never see localStorage or the founder seed.
+ * Localhost without Supabase may keep the on-device founder notebook.
+ */
+export type SubscriptionListMode = "remote" | "local-founder" | "empty" | "login-required"
+
+export function subscriptionListMode(input: {
+  configured: boolean
+  isLocalhost: boolean
+  signedIn: boolean
+}): SubscriptionListMode {
+  if (input.configured && input.signedIn) return "remote"
+  if (input.configured && !input.isLocalhost) return "login-required"
+  if (input.configured) return "empty"
+  if (input.isLocalhost) return "local-founder"
+  return "login-required"
+}
+
 export const AUTH_CALLBACK_PATH = "/auth/callback"

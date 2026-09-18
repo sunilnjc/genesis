@@ -8,6 +8,9 @@ User A writes OpenAI Pro+ $200. User B, with a different JWT, must read **zero**
 
 The founder seed ($445) is **not** in this database. New accounts start empty.
 
+On **ritestack.app** (and any build with Supabase configured), unsigned visitors see **no rows** — not the founder notebook, not another user’s list. Sign-in is required to see or add tools. Localhost without Supabase may keep on-device localStorage for the founder only.
+
+
 Job Pursuit (`vhjwzxcgkmxvrmfstzpy`) is forbidden.
 
 ## Automated proof

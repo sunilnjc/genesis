@@ -1,7 +1,7 @@
 "use client"
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react"
-import { AUTH_CALLBACK_PATH, hostedRequiresLogin, isBrowserLocalhost, isSupabaseConfigured } from "@/lib/auth/config"
+import { AUTH_CALLBACK_PATH, isBrowserLocalhost, isSupabaseConfigured } from "@/lib/auth/config"
 import { cacheAuth } from "@/lib/auth/session"
 import type { RiteStackAuth } from "@/lib/auth/types"
 import { getBrowserSupabase } from "@/lib/supabase/client"
@@ -15,8 +15,10 @@ function redirectTo() {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const configured = isSupabaseConfigured()
-  const isLocalhost = typeof window === "undefined" ? true : isBrowserLocalhost()
-  const requiresLogin = typeof window === "undefined" ? false : hostedRequiresLogin()
+  // Secure default on SSR: never treat the server as localhost or the hosted
+  // HTML will paint the founder notebook before the client hydrates.
+  const isLocalhost = typeof window === "undefined" ? false : isBrowserLocalhost()
+  const requiresLogin = configured && !isLocalhost
   const supabase = configured ? getBrowserSupabase() : null
 
   const [status, setStatus] = useState<RiteStackAuth["status"]>(configured ? "loading" : "local-only")

@@ -19,4 +19,6 @@ export {
   isBrowserLocalhost,
   isSupabaseConfigured,
   JOB_PURSUIT_SUPABASE_REF,
+  subscriptionListMode,
+  type SubscriptionListMode,
 } from "@/lib/auth/config"

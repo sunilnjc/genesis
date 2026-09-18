@@ -15,7 +15,7 @@ export type RiteStackAuth = {
   email: string | null
   /** Hosted + configured: the shell must not render until signed in. */
   requiresLogin: boolean
-  /** True on localhost/127.0.0.1 — localStorage founder seed is allowed. */
+  /** True on localhost/127.0.0.1 only. Founder localStorage seed is allowed when Supabase is not configured. */
   isLocalhost: boolean
   configured: boolean
   supabase: SupabaseClient | null

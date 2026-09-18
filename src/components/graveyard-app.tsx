@@ -83,7 +83,7 @@ export function GraveyardApp({
   headerAccessory?: ReactNode
 }) {
   const today = todayISO()
-  const { current, replace, reset, loading } = useGraveyardStore()
+  const { current, replace, reset, loading, canMutate } = useGraveyardStore()
   const {
     status: access,
     error: billingError,
@@ -203,6 +203,7 @@ export function GraveyardApp({
   }
 
   function loadSample() {
+    if (!canMutate) return
     void withSave((current) => {
       const withoutSample = current.filter((row) => !row.isSample)
       return [...withoutSample, ...sampleStack()]
@@ -219,6 +220,7 @@ export function GraveyardApp({
   }
 
   function openAdd() {
+    if (!canMutate) return
     setEditing(null)
     setFormOpen(true)
     setActionError(null)
@@ -310,7 +312,7 @@ export function GraveyardApp({
             </div>
             <div className="flex flex-col items-stretch gap-2 sm:items-end">
               {headerAccessory}
-              {view === "inventory" && hydrated ? (
+              {view === "inventory" && hydrated && canMutate ? (
                 <div className="flex flex-wrap gap-2">
                   {subscriptions.length === 0 ? null : (
                     <Button variant="outline" onClick={loadSample}>
@@ -375,16 +377,20 @@ export function GraveyardApp({
                 </EmptyMedia>
                 <EmptyTitle>Nothing to decide</EmptyTitle>
                 <EmptyDescription>
-                  Add the AI and dev tools you pay for, then keep, cut, or pause here.
+                  {canMutate
+                    ? "Add the AI and dev tools you pay for, then keep, cut, or pause here."
+                    : "Sign in to see your own tools. Unsigned visitors get an empty list — never a shared demo stack."}
                 </EmptyDescription>
               </EmptyHeader>
-              <EmptyContent>
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <Button asChild>
-                    <Link href={pathForView("inventory")}>Add in Inventory</Link>
-                  </Button>
-                </div>
-              </EmptyContent>
+              {canMutate ? (
+                <EmptyContent>
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <Button asChild>
+                      <Link href={pathForView("inventory")}>Add in Inventory</Link>
+                    </Button>
+                  </div>
+                </EmptyContent>
+              ) : null}
             </Empty>
           ) : (
             <QueueSection
@@ -403,24 +409,30 @@ export function GraveyardApp({
               </EmptyMedia>
               <EmptyTitle>No tools on the list yet</EmptyTitle>
               <EmptyDescription>
-                Add the AI and dev tools you pay for. Keep, cut, or pause lives on Decide.
+                {canMutate
+                  ? "Add the AI and dev tools you pay for. Keep, cut, or pause lives on Decide."
+                  : "Sign in to load your stack. This URL is not a shared notebook."}
               </EmptyDescription>
             </EmptyHeader>
-            <EmptyContent>
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <Button onClick={openAdd}>Add a subscription</Button>
-                <Button variant="outline" onClick={loadSample}>
-                  Load a sample AI-tool stack
-                </Button>
-              </div>
-            </EmptyContent>
+            {canMutate ? (
+              <EmptyContent>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Button onClick={openAdd}>Add a subscription</Button>
+                  <Button variant="outline" onClick={loadSample}>
+                    Load a sample AI-tool stack
+                  </Button>
+                </div>
+              </EmptyContent>
+            ) : null}
           </Empty>
         ) : (
           <>
+            {canMutate ? (
             <Button className="h-11 w-full md:hidden" onClick={openAdd}>
               <HugeiconsIcon icon={Add01Icon} strokeWidth={2} data-icon="inline-start" />
               Add subscription
             </Button>
+            ) : null}
             <section className="grid grid-cols-2 gap-2 lg:grid-cols-4">
               <Stat label="Monthly burn" value={formatMoney(burn)} hint="Still paying" />
               <Stat label="Cut this pass" value={formatMoney(cut)} hint="Burn dropped" />

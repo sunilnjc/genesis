@@ -21,7 +21,7 @@ export function HostedApp() {
     )
   }
 
-  if (auth.requiresLogin && auth.status !== "signed-in") {
+  if (auth.configured && !auth.isLocalhost && auth.status !== "signed-in") {
     return <LoginScreen />
   }
 

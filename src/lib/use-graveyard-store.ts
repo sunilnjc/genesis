@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import { useAuth } from "@/lib/auth"
+import { subscriptionListMode, useAuth } from "@/lib/auth"
 import {
   clearStore,
   emptyStore,
@@ -32,7 +32,14 @@ function localErrorMessage(error: unknown) {
 
 export function useGraveyardStore() {
   const auth = useAuth()
-  const remote = Boolean(auth.supabase && auth.userId && auth.status === "signed-in")
+  const signedIn = auth.status === "signed-in"
+  const listMode = subscriptionListMode({
+    configured: auth.configured,
+    isLocalhost: auth.isLocalhost,
+    signedIn,
+  })
+  const remote = listMode === "remote" && Boolean(auth.supabase && auth.userId)
+  const canMutate = listMode === "remote" || listMode === "local-founder"
   const [snapshot, setSnapshot] = useState<Snapshot>({ status: "loading" })
 
   useEffect(() => {
@@ -44,7 +51,7 @@ export function useGraveyardStore() {
         return
       }
 
-      if (remote && auth.supabase && auth.userId) {
+      if (listMode === "remote" && auth.supabase && auth.userId) {
         try {
           const subscriptions = await fetchSubscriptions(auth.supabase, auth.userId)
           if (!cancelled) {
@@ -64,25 +71,33 @@ export function useGraveyardStore() {
         return
       }
 
-      // Hosted signed-out is gated before this hook’s UI. Localhost keeps localStorage + founder seed.
-      try {
-        const store = loadStore({ seedFounder: auth.isLocalhost })
-        if (!cancelled) setSnapshot({ status: "ok", store })
-      } catch (error) {
-        if (!cancelled) {
-          setSnapshot({ status: "error", message: localErrorMessage(error) })
+      if (listMode === "local-founder") {
+        try {
+          const store = loadStore({ seedFounder: true })
+          if (!cancelled) setSnapshot({ status: "ok", store })
+        } catch (error) {
+          if (!cancelled) {
+            setSnapshot({ status: "error", message: localErrorMessage(error) })
+          }
         }
+        return
       }
+
+      // Configured but unsigned, or hosted without a session: never localStorage / founder seed.
+      if (!cancelled) setSnapshot({ status: "ok", store: emptyStore() })
     }
 
     void load()
     return () => {
       cancelled = true
     }
-  }, [auth.isLocalhost, auth.status, auth.supabase, auth.userId, remote])
+  }, [auth.status, auth.supabase, auth.userId, listMode])
 
   const replace = useCallback(
     async (subscriptions: Subscription[]) => {
+      if (!canMutate) {
+        throw new StorageError("Sign in to add or change tools. This URL is not a shared notebook.")
+      }
       if (remote && auth.supabase && auth.userId) {
         const next = remoteStore(subscriptions)
         await persistSubscriptions(auth.supabase, auth.userId, subscriptions)
@@ -98,10 +113,14 @@ export function useGraveyardStore() {
       saveStore(next)
       setSnapshot({ status: "ok", store: next })
     },
-    [auth.supabase, auth.userId, remote, snapshot]
+    [auth.supabase, auth.userId, canMutate, remote, snapshot]
   )
 
   const reset = useCallback(async () => {
+    if (!canMutate) {
+      setSnapshot({ status: "ok", store: emptyStore() })
+      return
+    }
     if (remote && auth.supabase && auth.userId) {
       await clearRemoteSubscriptions(auth.supabase, auth.userId)
       setSnapshot({ status: "ok", store: remoteStore([]) })
@@ -109,7 +128,7 @@ export function useGraveyardStore() {
     }
     clearStore()
     setSnapshot({ status: "ok", store: emptyStore() })
-  }, [auth.supabase, auth.userId, remote])
+  }, [auth.supabase, auth.userId, canMutate, remote])
 
   return {
     current:
@@ -122,5 +141,7 @@ export function useGraveyardStore() {
     replace,
     reset,
     remote,
+    canMutate,
+    listMode,
   }
 }
