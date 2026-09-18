@@ -1,0 +1,13 @@
+{
+  "name": "ritestack-e2e-ritual",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.55.1",
+    "@supabase/supabase-js": "^2.57.4"
+  }
+}
