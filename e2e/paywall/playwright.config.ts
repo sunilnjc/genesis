@@ -63,6 +63,7 @@ export default defineConfig({
     screenshot: "only-on-failure",
     video: "retain-on-failure",
     locale: "en-US",
+    serviceWorkers: "block",
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
