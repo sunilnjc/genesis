@@ -12,6 +12,7 @@
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "isolation": "node scripts/isolation-test.mjs",
+    "auth-mail": "node scripts/apply-auth-mail.mjs --templates",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
   },
   "dependencies": {

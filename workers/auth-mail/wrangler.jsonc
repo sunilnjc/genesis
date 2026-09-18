@@ -1,0 +1,22 @@
+{
+  "$schema": "../../../node_modules/wrangler/config-schema.json",
+  "name": "ritestack-auth-mail",
+  "account_id": "e9c1332f160774c63eae50c8a3bc30e3",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-18",
+  "send_email": [
+    {
+      "name": "EMAIL",
+      "allowed_sender_addresses": ["hello@ritestack.app"]
+    }
+  ],
+  "vars": {
+    "AUTH_SUPABASE_URL": "https://gmbretmepjxrsmuxvpbn.supabase.co"
+  },
+  "rules": [
+    {
+      "type": "Text",
+      "globs": ["**/*.html"]
+    }
+  ]
+}
