@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   title: "RiteStack",
   applicationName: "RiteStack",
   description:
-    "Keep, cut, or pause your AI/dev tool stack — last-used and a cancel URL.",
+    "Keep, cut, or pause your AI/dev tool stack. Manual add, decide-by, cancel URLs, monthly burn. Seven days after a magic link, then $14 once.",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
