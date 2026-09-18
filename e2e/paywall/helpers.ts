@@ -48,10 +48,6 @@ export async function waitForApp(page: Page) {
   await expect(page.locator("[data-view]")).toBeVisible()
 }
 
-export function visibleTab(page: Page, name: RegExp) {
-  return page.getByRole("tab", { name }).filter({ visible: true })
-}
-
 export async function expectNoInventedIntegrations(page: Page) {
   const text = await page.locator("body").innerText()
   expect(text).not.toMatch(FORBIDDEN_PRODUCTS)
