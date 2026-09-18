@@ -57,29 +57,32 @@ async function addTool(
   await dialog.locator("#sub-cancel").fill(input.cancelUrl)
   await dialog.getByRole("button", { name: "Add to list" }).click()
   await expect(dialog).toBeHidden()
-  await expect(page.getByText(input.name, { exact: true }).first()).toBeVisible()
+  await expect(inventoryRow(page, input.name)).toBeVisible()
 }
 
-function burnCard(page: Page) {
-  return page
-    .locator("div")
-    .filter({ has: page.getByText("Monthly burn", { exact: true }) })
-    .filter({ has: page.getByText("Still paying", { exact: true }) })
-    .first()
+function statsStrip(page: Page) {
+  return page.locator("section.grid").filter({ hasText: "Monthly burn" })
 }
 
-function cutCard(page: Page) {
-  return page
-    .locator("div")
-    .filter({ has: page.getByText("Cut this pass", { exact: true }) })
-    .filter({ has: page.getByText("Burn dropped", { exact: true }) })
-    .first()
+function inventoryRow(page: Page, toolName: string) {
+  return page.locator("[data-list='inventory'] table tr", { hasText: toolName })
+}
+
+function decideRow(page: Page, toolName: string) {
+  return page.locator("[data-list='decide-by'] table tr", { hasText: toolName })
 }
 
 async function decideOn(page: Page, toolName: string, action: "Keep" | "Pause" | "Cut") {
-  const row = page.locator("tr", { hasText: toolName })
+  const row = decideRow(page, toolName)
   await expect(row).toBeVisible()
+  const saved = page.waitForResponse(
+    (response) =>
+      response.url().includes("/rest/v1/subscriptions") &&
+      response.request().method() !== "GET" &&
+      response.ok()
+  )
   await row.getByRole("button", { name: action, exact: true }).click()
+  await saved
 }
 
 test.describe.configure({ mode: "serial" })
@@ -118,20 +121,19 @@ test.describe("signed-in ritual on ritestack.app", () => {
     await addTool(page, { name: PAUSE, cost: "22", cancelUrl: CANCEL.pause })
     await addTool(page, { name: CUT, cost: "33", cancelUrl: CANCEL.cut })
 
-    await expect(burnCard(page).getByText("$66", { exact: true })).toBeVisible()
-    await expect(page.getByRole("link", { name: "Cancel URL" })).toHaveCount(3)
-    await expect(page.getByRole("link", { name: "Cancel URL" }).first()).toHaveAttribute(
-      "href",
-      /https:\/\/example\.com\/cancel\//
-    )
+    await expect(statsStrip(page).getByText("$66", { exact: true })).toBeVisible()
+    await expect(page.locator("[data-list='inventory'] table").getByRole("link", { name: "Cancel URL" })).toHaveCount(3)
+    await expect(
+      inventoryRow(page, KEEP).getByRole("link", { name: "Cancel URL" })
+    ).toHaveAttribute("href", CANCEL.keep)
     await assertOnlyOwnRows(page)
 
     await page.getByRole("tab", { name: /^Decide/ }).click()
     await expect(page.locator("[data-view='decide']")).toBeVisible()
     await expect(page.getByRole("columnheader", { name: "Decide" })).toBeVisible()
-    await expect(page.getByText(KEEP, { exact: true })).toBeVisible()
-    await expect(page.getByText(PAUSE, { exact: true })).toBeVisible()
-    await expect(page.getByText(CUT, { exact: true })).toBeVisible()
+    await expect(decideRow(page, KEEP)).toBeVisible()
+    await expect(decideRow(page, PAUSE)).toBeVisible()
+    await expect(decideRow(page, CUT)).toBeVisible()
 
     await decideOn(page, KEEP, "Keep")
     await decideOn(page, PAUSE, "Pause")
@@ -144,11 +146,12 @@ test.describe("signed-in ritual on ritestack.app", () => {
 
     await page.getByRole("tab", { name: /^Inventory$/ }).click()
     await expect(page.locator("[data-view='inventory']")).toBeVisible()
-    await expect(page.locator("tr", { hasText: KEEP }).getByText("Keep", { exact: true })).toBeVisible()
-    await expect(page.locator("tr", { hasText: PAUSE }).getByText("Pause", { exact: true })).toBeVisible()
-    await expect(page.locator("tr", { hasText: CUT }).getByText("Cut", { exact: true })).toBeVisible()
-    await expect(burnCard(page).getByText("$33", { exact: true })).toBeVisible()
-    await expect(cutCard(page).getByText("$33", { exact: true })).toBeVisible()
+    await expect(inventoryRow(page, KEEP).getByText("Keep", { exact: true })).toBeVisible()
+    await expect(inventoryRow(page, PAUSE).getByText("Pause", { exact: true })).toBeVisible()
+    await expect(inventoryRow(page, CUT).getByText("Cut", { exact: true })).toBeVisible()
+    await expect(statsStrip(page).getByText("Monthly burn")).toBeVisible()
+    await expect(statsStrip(page).locator("div").filter({ hasText: "Monthly burn" }).getByText("$33", { exact: true })).toBeVisible()
+    await expect(statsStrip(page).locator("div").filter({ hasText: "Cut this pass" }).getByText("$33", { exact: true })).toBeVisible()
     await assertOnlyOwnRows(page)
   })
 })
