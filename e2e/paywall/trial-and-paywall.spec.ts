@@ -65,7 +65,7 @@ test.describe("7-day ritual trial then day-8 paywall", () => {
     await expect(visibleText(page, "Cancel URL locked")).toBeVisible()
     await expect(page.getByRole("button", { name: /^keep$/i })).toHaveCount(0)
 
-    await page.getByRole("button", { name: /add subscription/i }).click()
+    await page.getByRole("button", { name: /add subscription/i }).filter({ visible: true }).click()
     await page.locator("#sub-name").fill("E2E Paywall Free Add")
     await page.locator("#sub-cost").fill("9")
     await page.getByRole("button", { name: /add to list/i }).click()

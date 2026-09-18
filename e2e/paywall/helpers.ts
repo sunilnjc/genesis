@@ -70,7 +70,7 @@ export async function expectRitualLocked(page: Page) {
   await expect(page.getByRole("button", { name: /^keep$/i })).toHaveCount(0)
   await expect(page.getByRole("button", { name: /^cut$/i })).toHaveCount(0)
   await expect(page.getByRole("button", { name: /^pause$/i })).toHaveCount(0)
-  await expect(page.getByText("Cancel URL locked").filter({ visible: true })).toBeVisible()
+  await expect(page.getByText("Cancel URL locked").filter({ visible: true }).first()).toBeVisible()
 }
 
 export async function expectInventoryFree(page: Page) {
@@ -81,7 +81,7 @@ export async function expectInventoryFree(page: Page) {
 }
 
 export function visibleText(page: Page, text: string | RegExp) {
-  return page.getByText(text).filter({ visible: true })
+  return page.getByText(text).filter({ visible: true }).first()
 }
 
 export async function completeStripeTestCard(page: Page) {
