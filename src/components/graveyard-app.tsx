@@ -216,21 +216,7 @@ export function GraveyardApp() {
     setActionError(null)
   }
 
-  if (!hydrated) {
-    return (
-      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 px-4 py-6">
-        <div className="h-8 w-48 animate-pulse rounded-md bg-muted" />
-        <div className="grid gap-2 sm:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, index) => (
-            <div key={index} className="h-20 animate-pulse rounded-lg bg-muted" />
-          ))}
-        </div>
-        <p className="text-xs text-muted-foreground">Loading your list…</p>
-      </div>
-    )
-  }
-
-  if (loadError) {
+  if (hydrated && loadError) {
     return (
       <main className="mx-auto flex w-full max-w-lg flex-1 flex-col justify-center gap-4 px-4 py-10">
         <Alert variant="destructive">
@@ -255,7 +241,7 @@ export function GraveyardApp() {
         {view === "inventory" ? (
           <>
             <p className="font-mono text-3xl font-medium tabular-nums tracking-tight">
-              {formatMoney(burn)}
+              {hydrated ? formatMoney(burn) : "—"}
             </p>
             <p className="text-xs text-muted-foreground">Monthly burn · still paying</p>
           </>
@@ -263,9 +249,11 @@ export function GraveyardApp() {
           <>
             <p className="font-heading text-xl font-medium tracking-tight">Decide</p>
             <p className="text-xs text-muted-foreground">
-              {queue.length === 0
-                ? "Nothing waiting"
-                : `${queue.length} tool${queue.length === 1 ? "" : "s"} need a decision`}
+              {!hydrated
+                ? "Loading your queue…"
+                : queue.length === 0
+                  ? "Nothing waiting"
+                  : `${queue.length} tool${queue.length === 1 ? "" : "s"} need a decision`}
             </p>
           </>
         )}
@@ -289,7 +277,7 @@ export function GraveyardApp() {
                   : "The list you pay for. Add, edit, and see monthly burn. Ritual is Decide."}
               </p>
             </div>
-            {view === "inventory" ? (
+            {view === "inventory" && hydrated ? (
               <div className="flex flex-wrap gap-2">
                 {subscriptions.length === 0 ? null : (
                   <Button variant="outline" onClick={loadSample}>
@@ -314,7 +302,7 @@ export function GraveyardApp() {
           </Alert>
         ) : null}
 
-        {view === "inventory" && sampleCount > 0 ? (
+        {hydrated && view === "inventory" && sampleCount > 0 ? (
           <Alert>
             <AlertTitle>Sample AI-tool stack</AlertTitle>
             <AlertDescription>
@@ -326,7 +314,12 @@ export function GraveyardApp() {
           </Alert>
         ) : null}
 
-        {view === "decide" ? (
+        {!hydrated ? (
+          <div className="space-y-2">
+            <div className="h-24 animate-pulse rounded-lg bg-muted" />
+            <p className="text-xs text-muted-foreground">Loading your list…</p>
+          </div>
+        ) : view === "decide" ? (
           subscriptions.length === 0 ? (
             <Empty className="border border-dashed py-16">
               <EmptyHeader>
