@@ -64,17 +64,33 @@ function waitForLookup(page: Page, name: string) {
   )
 }
 
+function sessionStorageItems() {
+  const state = JSON.parse(readFileSync(resolve(here, ".auth/state.json"), "utf8")) as {
+    origins?: { localStorage?: { name: string; value: string }[] }[]
+  }
+  return state.origins?.[0]?.localStorage ?? []
+}
+
+async function injectHostedSession(page: Page) {
+  await page.route("**/sw.js", (route) => route.abort())
+  await page.addInitScript((entries: { name: string; value: string }[]) => {
+    for (const entry of entries) window.localStorage.setItem(entry.name, entry.value)
+  }, sessionStorageItems())
+}
+
 async function waitForSignedIn(page: Page) {
-  await expect(page.getByRole("heading", { name: "Sign in to your stack" })).toHaveCount(0)
   await expect(page.locator("[data-ritestack-user-id]")).toHaveAttribute(
     "data-ritestack-user-id",
     meta.userId
   )
+  await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible()
+  await expect(page.getByRole("heading", { name: "Sign in to your stack" })).toHaveCount(0)
   await expect(page.getByText("Checking session…")).toHaveCount(0)
   await expect(page.getByText("Loading your list…")).toHaveCount(0)
 }
 
 async function openAddDialog(page: Page) {
+  await injectHostedSession(page)
   await page.goto("/inventory")
   await waitForSignedIn(page)
   await page.getByRole("button", { name: /Add (a )?subscription/i }).first().click()
@@ -122,8 +138,6 @@ async function capturedLookupUrl(response: Response): Promise<string | null> {
 }
 
 test.describe("add-subscription cancel URL fill on ritestack.app", () => {
-  test.describe.configure({ mode: "serial" })
-
   test("lookup API is live", async () => {
     expect(
       probe.live,
@@ -132,7 +146,10 @@ test.describe("add-subscription cancel URL fill on ritestack.app", () => {
   })
 
   test("selecting or typing a catalog name fills cancel URL from lookup", async ({ page }) => {
-    expect(probe.live, blocked(`POST ${probe.path} → ${probe.status}.`)).toBe(true)
+    test.skip(
+      !probe.live,
+      blocked(`POST ${probe.path} → ${probe.status} (${probe.contentType || "no content-type"}).`)
+    )
 
     const dialog = await openAddDialog(page)
     const name = await catalogNameFromForm(dialog)
@@ -168,7 +185,10 @@ test.describe("add-subscription cancel URL fill on ritestack.app", () => {
   test("typing an arbitrary name looks up that name and fills only a returned URL", async ({
     page,
   }) => {
-    expect(probe.live, blocked(`POST ${probe.path} → ${probe.status}.`)).toBe(true)
+    test.skip(
+      !probe.live,
+      blocked(`POST ${probe.path} → ${probe.status} (${probe.contentType || "no content-type"}).`)
+    )
 
     const dialog = await openAddDialog(page)
     const add = dialog.getByRole("button", { name: "Add to list" })

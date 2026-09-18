@@ -31,6 +31,7 @@ export default defineConfig({
     baseURL,
     viewport: { width: 1280, height: 800 },
     storageState: resolve(dir, ".auth/state.json"),
+    serviceWorkers: "block",
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
     video: "retain-on-failure",

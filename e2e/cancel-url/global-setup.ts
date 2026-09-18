@@ -2,6 +2,7 @@ import { mkdirSync, writeFileSync } from "node:fs"
 import { dirname, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import { createCancelUrlAccount, HOSTED, probeLookup } from "./auth"
+import { playwrightAuthCookies } from "./session-cookie.ts"
 
 export default async function globalSetup() {
   const dir = dirname(fileURLToPath(import.meta.url))
@@ -20,7 +21,7 @@ export default async function globalSetup() {
     resolve(dir, ".auth/state.json"),
     `${JSON.stringify(
       {
-        cookies: [],
+        cookies: playwrightAuthCookies(HOSTED, meta.storageKey, session),
         origins: [
           {
             origin: HOSTED,
@@ -34,3 +35,4 @@ export default async function globalSetup() {
   )
   process.stdout.write("RiteStack cancel-url e2e: test user minted (magic link, no inbox).\n")
 }
+
