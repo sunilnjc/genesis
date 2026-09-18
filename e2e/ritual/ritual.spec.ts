@@ -85,9 +85,8 @@ async function decideOn(page: Page, toolName: string, action: "Keep" | "Pause" |
   await saved
 }
 
-test.describe.configure({ mode: "serial" })
-
 test.describe("signed-in ritual on ritestack.app", () => {
+  test.describe.configure({ mode: "serial" })
   test("Decide and Inventory are separate views", async ({ page }) => {
     await page.goto("/")
     await waitForSignedIn(page)
