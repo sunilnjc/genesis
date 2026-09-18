@@ -14,12 +14,32 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: npm
       - run: npm ci
       - run: npx opennextjs-cloudflare build
-      - uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: deploy
+      - name: Publish Worker (ritestack.app)
+        run: npx opennextjs-cloudflare deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - name: Publish Pages (ritestack.pages.dev)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          DIR="${RUNNER_TEMP}/ritestack-pages"
+          mkdir -p "$DIR"
+          cp -R .open-next/assets/. "$DIR/"
+          cp .next/server/app/index.html "$DIR/index.html"
+          cp .next/server/app/inventory.html "$DIR/inventory.html"
+          cp .next/server/app/_not-found.html "$DIR/404.html"
+          cp .next/server/app/index.rsc "$DIR/index.rsc"
+          cp .next/server/app/inventory.rsc "$DIR/inventory.rsc"
+          cp .next/server/app/manifest.webmanifest.body "$DIR/manifest.webmanifest"
+          npx wrangler pages deploy "$DIR" \
+            --project-name=ritestack \
+            --branch=main \
+            --commit-hash="${GITHUB_SHA}" \
+            --commit-message="$(git log -1 --pretty=%s)"
