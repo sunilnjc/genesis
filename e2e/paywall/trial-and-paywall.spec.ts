@@ -43,7 +43,7 @@ test.describe("7-day ritual trial then day-8 paywall", () => {
     await page.goto("/?preview=paywall")
     await waitForApp(page)
 
-    await expect(page.getByText("Unlock keep / cut / pause")).toBeVisible()
+    await expect(page.getByText("Unlock keep / cut / pause", { exact: true })).toBeVisible()
     await expect(
       page.getByText(/inventory stays free.*reminders/i)
     ).toBeVisible()
@@ -78,7 +78,7 @@ test.describe("7-day ritual trial then day-8 paywall", () => {
     await page.goto("/")
     await waitForApp(page)
 
-    await expect(page.getByText("Unlock keep / cut / pause")).toBeVisible()
+    await expect(page.getByText("Unlock keep / cut / pause", { exact: true })).toBeVisible()
     await expect(page.getByText(/trial ended/i)).toBeVisible()
     await expectRitualLocked(page)
 

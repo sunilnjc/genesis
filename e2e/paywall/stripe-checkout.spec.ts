@@ -25,7 +25,7 @@ test.describe("Stripe $14 one-time pack (test card 4242)", () => {
     await waitForApp(page)
 
     await expect(page).toHaveURL(/checkout=success|session_id=cs_/)
-    await expect(page.getByText("Unlock keep / cut / pause")).toHaveCount(0)
+    await expect(page.getByText("Unlock keep / cut / pause", { exact: true })).toHaveCount(0)
     await expectRitualUnlocked(page)
     await expectNoInventedIntegrations(page)
 

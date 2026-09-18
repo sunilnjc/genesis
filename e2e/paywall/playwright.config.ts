@@ -19,17 +19,20 @@ function readDotEnv(file: string) {
   return env
 }
 
-/** Local founder ritual + Stripe Checkout. Drop inherited Supabase so we never send magic links. */
+/** Local founder ritual + Stripe Checkout. Blank inherited Supabase so we never send magic links. */
 function e2eServerEnv() {
   const env = { ...process.env } as Record<string, string | undefined>
-  delete env.NEXT_PUBLIC_SUPABASE_URL
-  delete env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  delete env.SUPABASE_SERVICE_ROLE_KEY
   const local = readDotEnv(path.join(repoRoot, ".env.local"))
   for (const key of ["STRIPE_SECRET_KEY", "STRIPE_PRICE_ID", "STRIPE_WEBHOOK_SECRET"]) {
     if (local[key]) env[key] = local[key]
   }
   env.NEXT_PUBLIC_APP_URL = `http://127.0.0.1:${PORT}`
+  // Playwright merges this onto process.env — omitted keys stay set. Force empty.
+  env.NEXT_PUBLIC_SUPABASE_URL = ""
+  env.NEXT_PUBLIC_SUPABASE_ANON_KEY = ""
+  env.SUPABASE_SERVICE_ROLE_KEY = ""
+  env.SUPABASE_URL = ""
+  env.SUPABASE_ANON_KEY = ""
   return Object.fromEntries(
     Object.entries(env).filter((entry): entry is [string, string] => typeof entry[1] === "string")
   )
@@ -63,7 +66,7 @@ export default defineConfig({
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
-    command: `npx next dev --port ${PORT} --hostname 127.0.0.1`,
+    command: `rm -rf .next && env -u NEXT_PUBLIC_SUPABASE_URL -u NEXT_PUBLIC_SUPABASE_ANON_KEY -u SUPABASE_SERVICE_ROLE_KEY -u SUPABASE_URL -u SUPABASE_ANON_KEY npx next dev --port ${PORT} --hostname 127.0.0.1`,
     cwd: repoRoot,
     url: `http://127.0.0.1:${PORT}`,
     reuseExistingServer: false,
