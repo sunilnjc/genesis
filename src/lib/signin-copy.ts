@@ -5,8 +5,9 @@ export const SIGNIN_HEADLINE = "Sign in to your stack"
 export const SIGNIN_CONTEXT = "the AI and dev tools you pay for."
 
 export const STREAM_WORDS = ["keep", "cut", "pause"] as const
+export const STREAMER_SETTLED = "keep / cut / pause"
 
-export type StreamerPhase = "typing" | "holding" | "deleting"
+export type StreamerPhase = "typing" | "holding" | "deleting" | "settled"
 
 export type StreamerState = {
   wordIndex: number
@@ -20,7 +21,15 @@ export const STREAMER_INITIAL: StreamerState = {
   phase: "typing",
 }
 
+export const STREAMER_SETTLED_STATE: StreamerState = {
+  wordIndex: STREAM_WORDS.length - 1,
+  charCount: 0,
+  phase: "settled",
+}
+
 export function nextStreamerState(state: StreamerState): StreamerState {
+  if (state.phase === "settled") return state
+
   const word = STREAM_WORDS[state.wordIndex]
   if (state.phase === "typing") {
     if (state.charCount < word.length) {
@@ -29,30 +38,32 @@ export function nextStreamerState(state: StreamerState): StreamerState {
     return { ...state, phase: "holding" }
   }
   if (state.phase === "holding") {
+    if (state.wordIndex >= STREAM_WORDS.length - 1) {
+      return STREAMER_SETTLED_STATE
+    }
     return { ...state, phase: "deleting" }
   }
   if (state.charCount > 0) {
     return { ...state, charCount: state.charCount - 1 }
   }
   return {
-    wordIndex: (state.wordIndex + 1) % STREAM_WORDS.length,
+    wordIndex: state.wordIndex + 1,
     charCount: 0,
     phase: "typing",
   }
 }
 
 export function streamerVisible(state: StreamerState): string {
+  if (state.phase === "settled") return STREAMER_SETTLED
   return STREAM_WORDS[state.wordIndex].slice(0, state.charCount)
 }
 
 export function streamerDelayMs(state: StreamerState, reducedMotion = false): number {
-  if (reducedMotion) {
-    if (state.phase === "holding") return 1600
-    return 0
-  }
-  if (state.phase === "holding") return 1200
-  if (state.phase === "deleting") return 42
-  return 78
+  if (state.phase === "settled") return 0
+  if (reducedMotion) return 0
+  if (state.phase === "holding") return 2600
+  if (state.phase === "deleting") return 95
+  return 190
 }
 
 /** Strings that must never appear on the unsigned hosted page (founder notebook). */
@@ -75,5 +86,5 @@ export const SIGNIN_FORBIDDEN_STORY = [
 ] as const
 
 export function allSigninCopy(): string {
-  return [SIGNIN_BRAND, SIGNIN_HEADLINE, SIGNIN_CONTEXT, ...STREAM_WORDS].join("\n")
+  return [SIGNIN_BRAND, SIGNIN_HEADLINE, SIGNIN_CONTEXT, STREAMER_SETTLED, ...STREAM_WORDS].join("\n")
 }
