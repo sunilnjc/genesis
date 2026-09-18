@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState, useSyncExternalStore } from "react"
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react"
 import { Alert02Icon, Add01Icon, InboxIcon, Link01Icon, MoreHorizontalIcon, PauseIcon, ScissorIcon, Tick02Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { SubscriptionForm, parseCost } from "@/components/subscription-form"
@@ -46,6 +46,21 @@ import { StorageError } from "@/lib/storage"
 import { useGraveyardStore } from "@/lib/use-graveyard-store"
 import type { Decision, Subscription, SubscriptionDraft } from "@/lib/types"
 import { ToolMark } from "@/components/tool-mark"
+import { cn } from "@/lib/utils"
+
+type AppView = "decide" | "inventory"
+
+function readView(): AppView {
+  if (typeof window === "undefined") return "decide"
+  return window.location.hash.replace(/^#/, "") === "inventory" ? "inventory" : "decide"
+}
+
+function writeView(view: AppView) {
+  const next = view === "inventory" ? "#inventory" : "#decide"
+  if (window.location.hash !== next) {
+    window.history.replaceState(null, "", next)
+  }
+}
 
 function decisionBadge(decision: Decision) {
   switch (decision) {
@@ -78,9 +93,24 @@ export function GraveyardApp() {
   const [actionError, setActionError] = useState<string | null>(null)
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Subscription | null>(null)
+  const [view, setView] = useState<AppView>("decide")
   const subscriptions =
     current.status === "ok" ? current.store.subscriptions : EMPTY_SUBSCRIPTIONS
   const loadError = current.status === "error" ? current.message : null
+
+  useEffect(() => {
+    setView(readView())
+    function onHash() {
+      setView(readView())
+    }
+    window.addEventListener("hashchange", onHash)
+    return () => window.removeEventListener("hashchange", onHash)
+  }, [])
+
+  function go(next: AppView) {
+    setView(next)
+    writeView(next)
+  }
 
   function withSave(updater: (current: Subscription[]) => Subscription[]) {
     const next = updater(subscriptions)
@@ -235,38 +265,58 @@ export function GraveyardApp() {
         <p className="text-[0.625rem] font-medium tracking-[0.14em] text-muted-foreground uppercase">
           RiteStack
         </p>
-        <p className="font-mono text-3xl font-medium tabular-nums tracking-tight">
-          {formatMoney(burn)}
-        </p>
-        <p className="text-xs text-muted-foreground">
-          Still paying · {queue.length} to decide
-        </p>
+        {view === "inventory" ? (
+          <>
+            <p className="font-mono text-3xl font-medium tabular-nums tracking-tight">
+              {formatMoney(burn)}
+            </p>
+            <p className="text-xs text-muted-foreground">Monthly burn · still paying</p>
+          </>
+        ) : (
+          <>
+            <p className="font-heading text-xl font-medium tracking-tight">Decide</p>
+            <p className="text-xs text-muted-foreground">
+              {queue.length === 0
+                ? "Nothing waiting"
+                : `${queue.length} tool${queue.length === 1 ? "" : "s"} need a decision`}
+            </p>
+          </>
+        )}
       </header>
 
       <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] md:py-8 md:pb-8">
-        <header className="hidden flex-col gap-3 md:flex md:flex-row md:items-end md:justify-between">
-          <div className="space-y-1">
-            <p className="text-[0.625rem] font-medium tracking-[0.14em] text-muted-foreground uppercase">
-              RiteStack
-            </p>
-            <h1 className="font-heading text-lg font-medium tracking-tight sm:text-xl">
-              You don’t miss the cancel button. You miss a date to decide.
-            </h1>
-            <p className="max-w-2xl text-xs/relaxed text-muted-foreground">
-              Keep, cut, or pause — with last-used and a link to actually do it. No bank sync. No inbox scan. No auto-cancel.
-            </p>
+        <header className="hidden flex-col gap-3 md:flex">
+          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div className="space-y-1">
+              <p className="text-[0.625rem] font-medium tracking-[0.14em] text-muted-foreground uppercase">
+                RiteStack
+              </p>
+              <h1 className="font-heading text-lg font-medium tracking-tight sm:text-xl">
+                {view === "decide"
+                  ? "You don’t miss the cancel button. You miss a date to decide."
+                  : "Inventory"}
+              </h1>
+              <p className="max-w-2xl text-xs/relaxed text-muted-foreground">
+                {view === "decide"
+                  ? "Keep, cut, or pause — one sitting. The full list lives in Inventory."
+                  : "The list you pay for. Add, edit, and see monthly burn. Ritual is Decide."}
+              </p>
+            </div>
+            {view === "inventory" ? (
+              <div className="flex flex-wrap gap-2">
+                {subscriptions.length === 0 ? null : (
+                  <Button variant="outline" onClick={loadSample}>
+                    Load sample stack
+                  </Button>
+                )}
+                <Button onClick={openAdd}>
+                  <HugeiconsIcon icon={Add01Icon} strokeWidth={2} data-icon="inline-start" />
+                  Add subscription
+                </Button>
+              </div>
+            ) : null}
           </div>
-          <div className="flex flex-wrap gap-2">
-            {subscriptions.length === 0 ? null : (
-              <Button variant="outline" onClick={loadSample}>
-                Load sample stack
-              </Button>
-            )}
-            <Button onClick={openAdd}>
-              <HugeiconsIcon icon={Add01Icon} strokeWidth={2} data-icon="inline-start" />
-              Add subscription
-            </Button>
-          </div>
+          <ViewTabs view={view} queueCount={queue.length} onView={go} />
         </header>
 
         {actionError ? (
@@ -277,7 +327,7 @@ export function GraveyardApp() {
           </Alert>
         ) : null}
 
-        {sampleCount > 0 ? (
+        {view === "inventory" && sampleCount > 0 ? (
           <Alert>
             <AlertTitle>Sample AI-tool stack</AlertTitle>
             <AlertDescription>
@@ -289,7 +339,38 @@ export function GraveyardApp() {
           </Alert>
         ) : null}
 
-        {subscriptions.length === 0 ? (
+        {view === "decide" ? (
+          subscriptions.length === 0 ? (
+            <Empty className="border border-dashed py-16">
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <HugeiconsIcon icon={InboxIcon} strokeWidth={2} />
+                </EmptyMedia>
+                <EmptyTitle>Nothing to decide</EmptyTitle>
+                <EmptyDescription>
+                  Add the AI and dev tools you pay for, then keep, cut, or pause here.
+                </EmptyDescription>
+              </EmptyHeader>
+              <EmptyContent>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Button onClick={openAdd}>Add a subscription</Button>
+                  <Button variant="outline" onClick={() => go("inventory")}>
+                    Open Inventory
+                  </Button>
+                </div>
+              </EmptyContent>
+            </Empty>
+          ) : (
+            <QueueSection
+              today={today}
+              rows={queue}
+              onDecide={decide}
+              onEdit={openEdit}
+              onOpenInventory={() => go("inventory")}
+              onAdd={openAdd}
+            />
+          )
+        ) : subscriptions.length === 0 ? (
           <Empty className="border border-dashed py-16">
             <EmptyHeader>
               <EmptyMedia variant="icon">
@@ -297,7 +378,7 @@ export function GraveyardApp() {
               </EmptyMedia>
               <EmptyTitle>No tools on the list yet</EmptyTitle>
               <EmptyDescription>
-                Add the AI and dev tools you pay for. Keep, cut, or pause with last-used and a cancel URL.
+                Add the AI and dev tools you pay for. Keep, cut, or pause lives on Decide.
               </EmptyDescription>
             </EmptyHeader>
             <EmptyContent>
@@ -311,20 +392,16 @@ export function GraveyardApp() {
           </Empty>
         ) : (
           <>
-            <section className="hidden grid-cols-2 gap-2 md:grid lg:grid-cols-4">
+            <Button className="h-11 w-full md:hidden" onClick={openAdd}>
+              <HugeiconsIcon icon={Add01Icon} strokeWidth={2} data-icon="inline-start" />
+              Add subscription
+            </Button>
+            <section className="grid grid-cols-2 gap-2 lg:grid-cols-4">
               <Stat label="Monthly burn" value={formatMoney(burn)} hint="Still paying" />
               <Stat label="Cut this pass" value={formatMoney(cut)} hint="Burn dropped" />
               <Stat label="Decide-by" value={String(queue.length)} hint="Need a decision" />
               <Stat label="Still undecided" value={String(undecided)} hint="No keep/cut/pause yet" />
             </section>
-
-            <QueueSection
-              today={today}
-              rows={queue}
-              onDecide={decide}
-              onEdit={openEdit}
-            />
-
             <InventorySection
               today={today}
               rows={subscriptions}
@@ -336,11 +413,8 @@ export function GraveyardApp() {
         )}
       </div>
 
-      <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-foreground/10 bg-background/95 px-4 pt-2 backdrop-blur md:hidden pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-        <Button className="h-11 w-full text-sm" onClick={openAdd}>
-          <HugeiconsIcon icon={Add01Icon} strokeWidth={2} data-icon="inline-start" />
-          Add subscription
-        </Button>
+      <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-foreground/10 bg-background/95 px-2 pt-2 backdrop-blur md:hidden pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+        <ViewTabs view={view} queueCount={queue.length} onView={go} />
       </nav>
 
       {formOpen ? (
@@ -356,6 +430,45 @@ export function GraveyardApp() {
           onSave={saveDraft}
         />
       ) : null}
+    </div>
+  )
+}
+
+function ViewTabs({
+  view,
+  queueCount,
+  onView,
+}: {
+  view: AppView
+  queueCount: number
+  onView: (next: AppView) => void
+}) {
+  return (
+    <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
+      <button
+        type="button"
+        onClick={() => onView("decide")}
+        className={cn(
+          "h-9 rounded-md text-sm font-medium transition-colors",
+          view === "decide"
+            ? "bg-background text-foreground shadow-sm"
+            : "text-muted-foreground"
+        )}
+      >
+        Decide{queueCount > 0 ? ` · ${queueCount}` : ""}
+      </button>
+      <button
+        type="button"
+        onClick={() => onView("inventory")}
+        className={cn(
+          "h-9 rounded-md text-sm font-medium transition-colors",
+          view === "inventory"
+            ? "bg-background text-foreground shadow-sm"
+            : "text-muted-foreground"
+        )}
+      >
+        Inventory
+      </button>
     </div>
   )
 }
@@ -387,28 +500,37 @@ function QueueSection({
   rows,
   onDecide,
   onEdit,
+  onOpenInventory,
+  onAdd,
 }: {
   today: string
   rows: Subscription[]
   onDecide: (id: string, decision: Decision) => void
   onEdit: (row: Subscription) => void
+  onOpenInventory: () => void
+  onAdd: () => void
 }) {
   return (
     <section className="space-y-3">
-      <div>
-        <h2 className="font-heading text-sm font-medium">Decide-by queue</h2>
-        <p className="text-xs text-muted-foreground">
-          Renewing soon, last-used unknown or stale, and pauses that are due. One action per row.
-        </p>
-      </div>
+      <p className="hidden text-xs text-muted-foreground md:block">
+        Renewing soon, last-used not set or stale, still undecided, and pauses that are due. One action per row.
+      </p>
       {rows.length === 0 ? (
         <Empty className="border border-dashed py-10">
           <EmptyHeader>
-            <EmptyTitle>Nothing to decide right now</EmptyTitle>
+            <EmptyTitle>Nothing to decide</EmptyTitle>
             <EmptyDescription>
-              Queue is empty. Add a tool, or wait until a renew date, unknown last-used, or 30-day pause comes due.
+              Queue is empty. Open Inventory to browse the list, or add a tool.
             </EmptyDescription>
           </EmptyHeader>
+          <EmptyContent>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button onClick={onOpenInventory}>Open Inventory</Button>
+              <Button variant="outline" onClick={onAdd}>
+                Add a subscription
+              </Button>
+            </div>
+          </EmptyContent>
         </Empty>
       ) : (
         <>
@@ -533,9 +655,8 @@ function InventorySection({
   return (
     <section className="space-y-3">
       <div>
-        <h2 className="font-heading text-sm font-medium">Inventory</h2>
         <p className="text-xs text-muted-foreground">
-          The list. The ritual is the queue above.
+          Full list. Add and edit here. Keep / cut / pause is on Decide.
         </p>
       </div>
       <div className="grid gap-2 md:hidden">
@@ -544,7 +665,6 @@ function InventorySection({
             key={row.id}
             row={row}
             today={today}
-            onDecide={onDecide}
             onEdit={onEdit}
           />
         ))}
@@ -631,12 +751,10 @@ function InventorySection({
 function InventoryCard({
   row,
   today,
-  onDecide,
   onEdit,
 }: {
   row: Subscription
   today: string
-  onDecide: (id: string, decision: Decision) => void
   onEdit: (row: Subscription) => void
 }) {
   return (
@@ -659,7 +777,6 @@ function InventoryCard({
       </CardHeader>
       <CardContent className="space-y-3">
         <CancelLink row={row} />
-        <HugeDecisionActions row={row} onDecide={onDecide} />
         <Button size="sm" variant="ghost" className="h-8 px-0 text-muted-foreground" onClick={() => onEdit(row)}>
           Edit
         </Button>

@@ -57,6 +57,8 @@ export function queueReasons(sub: Subscription, today: string): QueueReason[] {
 }
 
 export function inDecideByQueue(sub: Subscription, today: string): boolean {
+  if (sub.decision === "cut") return false
+  if (sub.decision === "undecided") return true
   return queueReasons(sub, today).length > 0
 }
 
