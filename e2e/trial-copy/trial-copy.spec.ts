@@ -120,15 +120,31 @@ test.describe("site chrome", () => {
         },
       })
     })
-    await page.goto("/feedback", { waitUntil: "domcontentloaded" })
+    await page.route("**/api/feedback", async (route) => {
+      if (route.request().method() !== "POST") {
+        await route.continue()
+        return
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ ok: true }),
+      })
+    })
+    await page.goto("/feedback", { waitUntil: "load" })
     await expect(page.locator('[data-ritestack-screen="feedback"]')).toBeVisible()
-    await expect(page.getByRole("heading", { name: "Feedback" })).toBeVisible()
+    const form = page.locator("form[data-ritestack-feedback]")
+    await expect(form).toBeVisible()
+    await expect
+      .poll(async () => form.evaluate((el) => Object.keys(el).some((key) => key.startsWith("__react"))))
+      .toBe(true)
     await page.locator("#feedback-name").fill("Trial copy e2e")
     await page.locator("#feedback-email").fill("e2e-feedback@example.invalid")
     await page.locator("#feedback-message").fill("Does the feedback form actually submit?")
     await page.getByRole("button", { name: "Send feedback" }).click()
     await expect(page.locator('[data-ritestack-feedback="sent"]')).toBeVisible()
     await expect(page.getByText(/^Sent\.$/)).toBeVisible()
+    await expect(page).toHaveURL(/\/feedback\/?$/)
     await assertSiteChrome(page)
   })
 })
