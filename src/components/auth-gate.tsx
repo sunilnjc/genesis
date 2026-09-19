@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { KeepCutPauseStreamer } from "@/components/keep-cut-pause-streamer"
+import { TrialCopyLine } from "@/components/trial-copy"
 import { SIGNIN_BRAND, SIGNIN_CONTEXT, SIGNIN_HEADLINE } from "@/lib/signin-copy"
 
 export function LoginScreen() {
@@ -43,6 +44,7 @@ export function LoginScreen() {
         <div className="space-y-2">
           <KeepCutPauseStreamer />
           <p className="text-sm text-muted-foreground">{SIGNIN_CONTEXT}</p>
+          <TrialCopyLine surface="unsigned" />
         </div>
       </div>
       <form className="space-y-3" onSubmit={sendLink}>
