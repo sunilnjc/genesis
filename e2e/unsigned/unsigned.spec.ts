@@ -58,6 +58,16 @@ async function assertEmptyNoSeed(page: Page) {
   await expect(page.getByRole("link", { name: "Decide" })).toHaveCount(0)
 }
 
+async function assertSiteFooter(page: Page) {
+  const footer = page.locator('[data-ritestack-footer="site"]')
+  await expect(footer).toBeVisible()
+  await expect(footer.getByText("© 2026 RiteStack")).toBeVisible()
+  await expect(footer.getByRole("link", { name: "About" })).toHaveAttribute("href", "/about")
+  await expect(footer.getByRole("link", { name: "Feedback" })).toHaveAttribute("href", "/feedback")
+  await expect(footer.getByRole("link", { name: "Brief" })).toHaveAttribute("href", "/brief")
+  await expect(footer.getByText(/subscription/i)).toHaveCount(0)
+}
+
 async function assertStreamerLoops(page: Page) {
   const streamer = page.locator('[data-ritestack-streamer="keep-cut-pause"]')
   const headline = page.getByRole("heading", { name: "Sign in to your stack" })
@@ -89,6 +99,7 @@ for (const path of PATHS) {
     await openUnsigned(page, path)
     await assertEmptyNoSeed(page)
     await assertMagicLinkForm(page)
+    await assertSiteFooter(page)
     await assertStreamerLoops(page)
   })
 }

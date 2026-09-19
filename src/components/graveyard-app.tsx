@@ -273,7 +273,8 @@ export function GraveyardApp({
 
   return (
     <div
-      className="flex min-h-full w-full max-w-[100vw] flex-1 flex-col overflow-x-hidden"
+      className="flex min-h-0 w-full max-w-[100vw] flex-1 flex-col overflow-x-hidden"
+      data-ritestack-chrome="app"
       data-view={view}
     >
       <header className="sticky top-0 z-20 border-b border-foreground/10 bg-background/95 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 backdrop-blur md:hidden">
@@ -304,7 +305,7 @@ export function GraveyardApp({
         )}
       </header>
 
-      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] md:py-8 md:pb-8">
+      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-4 pb-6 md:py-8 md:pb-8">
         <header className="hidden flex-col gap-3 md:flex">
           <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div className="space-y-1">

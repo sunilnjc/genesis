@@ -4,6 +4,7 @@ import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import { AppProviders } from "@/components/app-providers";
 import { PwaRegister } from "@/components/pwa-register";
+import { SiteFooter } from "@/components/site-footer";
 import { ThemeProvider } from "@/components/theme-provider";
 import { cn } from "@/lib/utils";
 
@@ -64,10 +65,13 @@ export default function RootLayout({
       )}
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col bg-background text-foreground">
+      <body className="flex min-h-full flex-col bg-background text-foreground">
         <ThemeProvider>
           <PwaRegister />
-          <AppProviders>{children}</AppProviders>
+          <AppProviders>
+            <div className="flex flex-1 flex-col">{children}</div>
+            <SiteFooter />
+          </AppProviders>
         </ThemeProvider>
       </body>
     </html>
