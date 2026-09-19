@@ -91,3 +91,11 @@ export function entitlement(input: EntitlementInput): Entitlement {
     checkoutEnabled,
   }
 }
+
+/** $14 Checkout is allowed during trial. Only paid accounts are blocked. */
+export function canStartPackCheckout(input: {
+  state: EntitlementState
+  checkoutEnabled: boolean
+}): boolean {
+  return input.checkoutEnabled && input.state !== "paid"
+}

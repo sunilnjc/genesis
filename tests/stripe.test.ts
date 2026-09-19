@@ -27,6 +27,21 @@ test("checkout is a one-time $14 payment, not a subscription trial", () => {
   )
 })
 
+test("unlock page can return to /unlock after $14 Checkout", () => {
+  const fields = checkoutSessionFields({
+    appUrl: "https://ritestack.app",
+    priceId: null,
+    userId: "11111111-1111-4111-8111-111111111111",
+    returnTo: "/unlock",
+  })
+  assert.equal(
+    fields.success_url,
+    "https://ritestack.app/unlock?checkout=success&session_id={CHECKOUT_SESSION_ID}"
+  )
+  assert.equal(fields.cancel_url, "https://ritestack.app/unlock?checkout=cancel")
+  assert.equal(fields.mode, "payment")
+})
+
 test("configured price id is used when present", () => {
   const fields = checkoutSessionFields({
     appUrl: "https://ritestack.app",

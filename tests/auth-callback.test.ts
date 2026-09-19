@@ -45,6 +45,7 @@ test("provider PKCE error is classified, never shown raw", () => {
 
 test("safe next paths stay on-origin", () => {
   assert.equal(safeNextPath("/inventory"), "/inventory")
+  assert.equal(safeNextPath("/unlock"), "/unlock")
   assert.equal(safeNextPath("https://evil.example"), "/")
   assert.equal(safeNextPath("//ritestack.app"), "/")
   assert.equal(safeNextPath(null), "/")
