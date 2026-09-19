@@ -18,6 +18,20 @@ export const trialStatus = {
   message: "Trial · 7 days left. Keep / cut / pause stays unlocked.",
 }
 
+export const paidStatus = {
+  viewList: true as const,
+  ritual: true,
+  state: "paid" as const,
+  trialEndsAt: "2026-09-25T12:00:00.000Z",
+  packPaidAt: "2026-09-19T00:00:00.000Z",
+  daysLeft: null,
+  checkoutEnabled: false,
+  userId: "e2e-paid-user",
+  checkoutConfigured: true,
+  supabaseConfigured: true,
+  message: "RiteStack pack is unlocked. Ritual, cancel URLs, and pause reminders are included.",
+}
+
 export const day8PaywallStatus = {
   viewList: true as const,
   ritual: false,
