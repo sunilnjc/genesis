@@ -6,6 +6,9 @@ export const SITE_FOOTER_LINKS = [
   { href: "/about", label: "About" },
   { href: "/feedback", label: "Feedback" },
   { href: "/brief", label: "Brief" },
+  { href: "/terms", label: "Terms" },
+  { href: "/privacy", label: "Privacy" },
+  { href: "/refund", label: "Refund" },
 ] as const
 
 export function siteFooterText(): string {
