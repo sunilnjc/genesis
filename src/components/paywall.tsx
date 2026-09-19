@@ -7,15 +7,12 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { PACK_AMOUNT_DOLLARS } from "@/lib/entitlement"
+import { showSignedInTrialPackCopy } from "@/lib/trial-copy"
 import type { BillingStatus } from "@/lib/use-entitlement"
 
 export function TrialBanner({ status }: { status: BillingStatus }) {
-  return (
-    <TrialCopyLine
-      surface="signed-in"
-      daysLeft={status.state === "trial" ? status.daysLeft : null}
-    />
-  )
+  if (!showSignedInTrialPackCopy(status.state)) return null
+  return <TrialCopyLine surface="signed-in" daysLeft={status.daysLeft} />
 }
 
 export function PaywallCard({

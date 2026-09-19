@@ -6,6 +6,7 @@ import {
   expectRitualLocked,
   expectRitualUnlocked,
   mockBillingStatus,
+  paidStatus,
   trialStatus,
   visibleText,
   waitForApp,
@@ -90,4 +91,20 @@ test.describe("7-day ritual trial then day-8 paywall", () => {
     await expectInventoryFree(page)
     await expect(page.getByText("Ritual locked")).toBeVisible()
   })
+
+  for (const path of ["/", "/inventory"] as const) {
+    test(`mocked paid ${path} does not reuse the unpaid 7-day trial line`, async ({ page }) => {
+      await mockBillingStatus(page, paidStatus)
+      await page.goto(path)
+      await waitForApp(page)
+
+      await expect(page.getByText(/7 days full ritual after sign-in/i)).toHaveCount(0)
+      await expect(page.locator('[data-ritestack-trial-copy="signed-in"]')).toHaveCount(0)
+      await expect(page.locator("[data-ritestack-trial-days]")).toHaveCount(0)
+      await expect(page.locator("[data-ritestack-trial-remaining]")).toHaveCount(0)
+      await expect(page.getByText(/\b[1-7] days? left\b/i)).toHaveCount(0)
+      await expect(page.getByRole("button", { name: /unlock ritestack pack · \$14/i })).toHaveCount(0)
+      await expectNoInventedIntegrations(page)
+    })
+  }
 })

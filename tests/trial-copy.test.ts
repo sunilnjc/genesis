@@ -1,6 +1,10 @@
 import assert from "node:assert/strict"
 import test from "node:test"
-import { remainingTrialLabel, TRIAL_PACK_COPY } from "../src/lib/trial-copy.ts"
+import {
+  remainingTrialLabel,
+  showSignedInTrialPackCopy,
+  TRIAL_PACK_COPY,
+} from "../src/lib/trial-copy.ts"
 
 test("locked pack copy is the short ritual line, not a subscription story", () => {
   assert.equal(
@@ -22,4 +26,11 @@ test("remaining days come from trial_ends_at daysLeft", () => {
   assert.equal(remainingTrialLabel(0), null)
   assert.equal(remainingTrialLabel(null), null)
   assert.equal(remainingTrialLabel(undefined), null)
+})
+
+test("signed-in trial pack copy is trial-only — paid empty must not reuse it", () => {
+  assert.equal(showSignedInTrialPackCopy("trial"), true)
+  assert.equal(showSignedInTrialPackCopy("paid"), false)
+  assert.equal(showSignedInTrialPackCopy("paywall"), false)
+  assert.equal(showSignedInTrialPackCopy("local"), false)
 })
