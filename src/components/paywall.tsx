@@ -46,16 +46,19 @@ export function PaywallCard({
         ) : null}
         <Button className="h-11 w-full sm:w-auto" disabled={busy || !status.checkoutEnabled} onClick={onUnlock}>
           {busy
-            ? "Opening Stripe…"
+            ? status.checkoutProvider === "paddle"
+              ? "Opening Paddle…"
+              : "Opening Checkout…"
             : status.checkoutEnabled
               ? `Unlock RiteStack pack · $${PACK_AMOUNT_DOLLARS}`
-              : "Stripe not configured"}
+              : "Checkout not configured"}
         </Button>
         {!status.checkoutEnabled ? (
           <p className="text-[0.625rem] text-muted-foreground">
-            Set <code>STRIPE_SECRET_KEY</code> (<code>sk_test_</code> or <code>sk_live_</code>) in{" "}
-            <code>.env.local</code> or the Cloudflare Worker secrets, then restart. Do not paste
-            keys into chat.
+            Set Paddle secrets (<code>PADDLE_API_KEY</code>, <code>PADDLE_WEBHOOK_SECRET</code>,{" "}
+            <code>PADDLE_PRICE_ID</code>, <code>PADDLE_ENV</code>) on the Worker after you say
+            “Paddle is ready”. Local Stripe <code>sk_test_</code> is test-only. Do not paste keys
+            into chat.
           </p>
         ) : null}
       </CardContent>

@@ -1,6 +1,15 @@
 import { jwtFromRequest } from "@/lib/billing-auth"
+import { checkoutSignInError } from "@/lib/checkout-access"
 import { checkoutReturnPathFromRequest } from "@/lib/checkout-return"
 import { entitlement, type Entitlement } from "@/lib/entitlement"
+import {
+  createPaddleCheckout,
+  paddleConfigured,
+  readPaddleConfig,
+  type CheckoutProvider,
+  type PaddleEnv,
+  type PaddleOverlay,
+} from "@/lib/paddle"
 import {
   authUserFromJwt,
   ensureOwnProfile,
@@ -10,10 +19,11 @@ import {
   type ProfileRow,
 } from "@/lib/supabase-admin"
 import {
-  checkedCheckoutUrl,
+  checkedStripeCheckoutUrl,
   checkoutSessionFields,
   paidCheckoutFromSession,
   readStripeConfig,
+  stripeConfigured,
   stripeRequest,
   type PaidCheckout,
   type StripeMode,
@@ -25,8 +35,10 @@ const PACK_COOKIE = "ritestack_pack_session"
 export type BillingStatus = Entitlement & {
   userId: string | null
   checkoutConfigured: boolean
+  checkoutProvider: CheckoutProvider | null
   supabaseConfigured: boolean
   stripeMode: StripeMode | null
+  paddleEnv: PaddleEnv | null
   message: string
 }
 
@@ -75,19 +87,26 @@ function statusMessage(row: Entitlement): string {
   }
 }
 
+export function checkoutProviderFromEnv(
+  env: NodeJS.Dict<string> = process.env
+): { provider: CheckoutProvider | null; paddleEnv: PaddleEnv | null; stripeMode: StripeMode | null } {
+  if (paddleConfigured(env)) {
+    return { provider: "paddle", paddleEnv: readPaddleConfig(env).env, stripeMode: null }
+  }
+  if (stripeConfigured(env)) {
+    return { provider: "stripe", paddleEnv: null, stripeMode: readStripeConfig(env).stripeMode }
+  }
+  return { provider: null, paddleEnv: null, stripeMode: null }
+}
+
 export async function billingStatus(request: Request): Promise<{
   status: BillingStatus
   setCookies: string[]
 }> {
   const setCookies: string[] = []
   const supabase = readSupabaseConfig()
-  let stripeMode: StripeMode | null = null
-  try {
-    stripeMode = readStripeConfig().stripeMode
-  } catch {
-    stripeMode = null
-  }
-  const checkoutConfigured = stripeMode !== null
+  const { provider, paddleEnv, stripeMode } = checkoutProviderFromEnv()
+  const checkoutConfigured = provider !== null
   const user = await currentUser(request)
   let profile: ProfileRow | null = null
 
@@ -101,7 +120,8 @@ export async function billingStatus(request: Request): Promise<{
 
   const claimedSession =
     new URL(request.url).searchParams.get("session_id") ?? packSessionFrom(request)
-  if (!packPaidAt && claimedSession && checkoutConfigured) {
+  // Stripe test retrieve is signed by Stripe. Paddle grants only from a verified webhook.
+  if (!packPaidAt && claimedSession && provider === "stripe") {
     const paid = await retrievePaidCheckout(claimedSession)
     const expectedId = user?.id ?? localId
     if (paid && paid.userId === expectedId) {
@@ -123,26 +143,35 @@ export async function billingStatus(request: Request): Promise<{
       ...row,
       userId: user?.id ?? (supabase ? null : localId),
       checkoutConfigured,
+      checkoutProvider: provider,
       supabaseConfigured: Boolean(supabase),
       stripeMode,
+      paddleEnv,
       message: statusMessage(row),
     },
     setCookies,
   }
 }
 
-export async function startCheckout(request: Request): Promise<{ url: string; setCookies: string[] }> {
-  const config = readStripeConfig()
+export async function startCheckout(request: Request): Promise<{
+  url: string
+  provider: CheckoutProvider
+  overlay: PaddleOverlay | null
+  setCookies: string[]
+}> {
   const supabase = readSupabaseConfig()
   const user = await currentUser(request)
   const setCookies: string[] = []
   let userId = user?.id ?? null
   const email = user?.email ?? null
 
+  const denied = checkoutSignInError({
+    supabaseConfigured: Boolean(supabase),
+    hasUser: Boolean(userId),
+  })
+  if (denied) throw new Error(denied)
+
   if (!userId) {
-    if (supabase) {
-      throw new Error("Sign in to buy the RiteStack pack.")
-    }
     userId = localUserIdFrom(request)
     setCookies.push(localUserCookie(userId))
   }
@@ -155,27 +184,42 @@ export async function startCheckout(request: Request): Promise<{ url: string; se
   }
 
   const returnTo = await checkoutReturnPathFromRequest(request)
+  const { provider } = checkoutProviderFromEnv()
 
-  const session = await stripeRequest(
-    config,
-    "POST",
-    "/checkout/sessions",
-    checkoutSessionFields({
-      appUrl: config.appUrl,
-      priceId: config.priceId,
-      userId,
-      email,
-      returnTo,
-    })
+  if (provider === "paddle") {
+    const config = readPaddleConfig()
+    const checkout = await createPaddleCheckout(config, { userId, email, returnTo })
+    return { url: checkout.url, provider, overlay: checkout.overlay, setCookies }
+  }
+
+  if (provider === "stripe") {
+    const config = readStripeConfig()
+    const session = await stripeRequest(
+      config,
+      "POST",
+      "/checkout/sessions",
+      checkoutSessionFields({
+        appUrl: config.appUrl,
+        priceId: config.priceId,
+        userId,
+        email,
+        returnTo,
+      })
+    )
+    const url = checkedStripeCheckoutUrl(
+      session && typeof session === "object" ? (session as { url?: unknown }).url : null
+    )
+    return { url, provider, overlay: null, setCookies }
+  }
+
+  throw new Error(
+    "Checkout is not configured. Set Paddle secrets (PADDLE_API_KEY, PADDLE_WEBHOOK_SECRET, PADDLE_PRICE_ID, PADDLE_ENV) on the Worker."
   )
-  const url = checkedCheckoutUrl(
-    session && typeof session === "object" ? (session as { url?: unknown }).url : null
-  )
-  return { url, setCookies }
 }
 
 export async function retrievePaidCheckout(sessionId: string): Promise<PaidCheckout | null> {
   if (!sessionId.startsWith("cs_")) return null
+  if (!stripeConfigured()) return null
   const config = readStripeConfig()
   const session = await stripeRequest(
     config,

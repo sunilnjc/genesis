@@ -31,7 +31,7 @@ Other agents: import `{ useAuth, getUserId, getSession }` from `@/lib/auth`. `us
 - Local Simple Icons (and a CoinGecko gecko mark) on matching names, in brand color; unknown tools get a letter, not a fake logo
 - Optional extra rows from **Load sample stack** stay labeled **Sample**
 - Data: **localhost** uses `localStorage` (founder seed). **Hosted** requires login and loads only that user’s rows from Supabase. No `service_role` in the browser. No Plaid, no auto-cancel.
-- **$14 one-time pack** (Stripe Checkout): 7 days of full ritual after signup, then paywall. The list stays free. See [Payments](#payments).
+- **$14 one-time pack** (Paddle Checkout, MoR): 7 days of full ritual after signup, then paywall. The list stays free. See [Payments](#payments).
 
 ## Run locally
 
@@ -45,37 +45,48 @@ App: [http://127.0.0.1:4317](http://127.0.0.1:4317) (use another port if 4317 is
 
 ## Payments
 
-7 days of keep / cut / pause, cancel URLs, and pause reminders after signup. Day 8: paywall until the **$14 one-time** RiteStack pack is paid. Viewing and editing the inventory list stays free. This is Checkout `mode=payment`, not a subscription trial. The optional $6/mo SKU is not wired.
+7 days of keep / cut / pause, cancel URLs, and pause reminders after signup. Day 8: paywall until the **$14 one-time** RiteStack pack is paid. Viewing and editing the inventory list stays free. This is a one-time Paddle Checkout, not a subscription trial. The optional $6/mo SKU is not wired. Paddle.com is the Merchant of Record.
 
 Decide and Inventory do **not** show a pay button while the trial is active. Signed-in testers can open **[/unlock](https://ritestack.app/unlock)** to start $14 Checkout during the trial. That page does not end the 7-day trial for anyone else.
 
 Preview the paywall at `/?preview=paywall` (Decide) or `/inventory?preview=paywall` (Inventory) on localhost.
 
-Checkout uses whatever secret is on the Worker: `sk_test_…` until live secrets are put, then `sk_live_…`. Same lock either way: **7 days full ritual. Then $14 once.** Not a subscription.
+Live $14 is **Paddle**, not live Stripe. `sk_test_` on the Worker is local/test Checkout only and must not be treated as a live charge. Prefer Paddle whenever `PADDLE_API_KEY` + `PADDLE_WEBHOOK_SECRET` + `PADDLE_PRICE_ID` + `PADDLE_ENV` are set. `GET /api/billing/status` reports `checkoutProvider` (`paddle` or `stripe`) and `paddleEnv` (`sandbox` or `live`).
 
-### Stripe test mode (local + current Worker)
+Pack grant is the verified Paddle webhook `transaction.completed` at `POST /api/billing/paddle-webhook`. Returning from Checkout with a query flag does **not** mark the pack paid.
+
+### Paddle (live path)
+
+Do not put live keys in git or chat. After you say **“Paddle is ready”**, put Worker secrets yourself:
+
+```bash
+npx wrangler secret put PADDLE_API_KEY
+npx wrangler secret put PADDLE_WEBHOOK_SECRET
+npx wrangler secret put PADDLE_PRICE_ID
+npx wrangler secret put PADDLE_ENV
+```
+
+`PADDLE_ENV` is `sandbox` or `live`. Create a **$14 USD one-time** price in Paddle (`pri_…`). Notification destination URL: `https://ritestack.app/api/billing/paddle-webhook` (event `transaction.completed`). Also create an active **client-side token** in Paddle → Developer tools → Authentication so `/unlock` can open overlay Checkout. The Worker fetches that public token with the API key; do not paste it into chat.
+
+Default payment link in Paddle Checkout settings should be `https://ritestack.app/unlock`.
+
+### Stripe test mode (local fallback only)
 
 1. Copy `.env.example` → `.env.local`.
-2. Put a **test** secret (`sk_test_…`) from [Stripe Dashboard → test API keys](https://dashboard.stripe.com/test/apikeys) into `.env.local`. Never commit it. Never paste `sk_live_` into chat.
+2. Put a **test** secret (`sk_test_…`) from [Stripe Dashboard → test API keys](https://dashboard.stripe.com/test/apikeys) into `.env.local`. Never commit it. Live Stripe (`sk_live_`) is refused.
 3. `npm run stripe:setup` creates the $14 **test** product/price and a webhook to `https://ritestack.app/api/billing/webhook`. That script refuses live keys.
-4. Cloudflare Worker secrets (same names): `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID`. Public var: `NEXT_PUBLIC_APP_URL=https://ritestack.app`. Also: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`. Optional: `FOUNDERS_PAID_EMAIL` (founder notify; leave unset until you have an inbox — do not invent one).
+4. Cloudflare Worker secrets (same names): `STRIPE_SECRET_KEY` (test only), `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID`. Public var: `NEXT_PUBLIC_APP_URL=https://ritestack.app`. Also: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`. Optional: `FOUNDERS_PAID_EMAIL` (founder notify; leave unset until you have an inbox — do not invent one).
 5. Apply `supabase/migrations/20260918190000_profiles_trial.sql` in the RiteStack Supabase project (not Job Pursuit).
 
-### Live Checkout (after Dashboard activate)
-
-Do not put live keys in git or chat. After Stripe live is ready, replace the Worker secrets above with live values (`sk_live_…`, live `price_…`, live `whsec_…`) via `wrangler secret put`. Until those live secrets exist, hosted Checkout stays on test keys. `GET /api/billing/status` reports `stripeMode` as `test` or `live`.
-
-Customer receipt: Checkout sets `receipt_email` from the signed-in address. Also turn on Stripe Dashboard emails for successful payments. Founder ping: webhook `checkout.session.completed` mails `FOUNDERS_PAID_EMAIL` from `hello@ritestack.app` when that secret is set.
-
-### Test cards
+### Test cards (Stripe test mode only)
 
 | Card | Result |
 |---|---|
-| `4242 4242 4242 4242` | Success (test mode only) |
-| `4000 0000 0000 0002` | Decline (test mode only) |
+| `4242 4242 4242 4242` | Success (Stripe test mode only) |
+| `4000 0000 0000 0002` | Decline (Stripe test mode only) |
 | Any future expiry, any 3-digit CVC, any ZIP | |
 
-Live mode charges a real card. Test cards do not work against `sk_live_`.
+Paddle sandbox uses Paddle’s own test checkout, not Stripe test cards. Paddle live charges a real card.
 
 ### What is gated
 
@@ -85,7 +96,7 @@ Live mode charges a real card. Test cards do not work against `sk_live_`.
 | Decide-by queue **viewing** | Cancel URL links |
 | | Pause reminders (30-day) |
 
-SQL: `supabase/migrations/20260918190000_profiles_trial.sql` (`trial_ends_at`, `pack_paid_at`). Grant is webhook (`checkout.session.completed`) or a verified session retrieve on return — never a `?paid=true` query flag.
+SQL: `supabase/migrations/20260918190000_profiles_trial.sql` (`trial_ends_at`, `pack_paid_at`). Grant is the verified Paddle webhook (`transaction.completed`) — never a `?paid=true` query flag. Stripe test mode may still grant from a verified session retrieve.
 
 Copy `.env.example` to `.env.local` with the **ritestack** Supabase URL + anon key (not Job Pursuit). Localhost still runs without those keys.
 

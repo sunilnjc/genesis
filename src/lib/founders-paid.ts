@@ -1,6 +1,8 @@
 import { PACK_AMOUNT_DOLLARS } from "./entitlement.ts"
 import { sendRiteStackMail } from "./ritestack-mail.ts"
-import type { PaidCheckout, StripeMode } from "./stripe.ts"
+import type { PaidCheckout } from "./stripe.ts"
+
+export type PaidNotifyMode = "paddle-live" | "paddle-sandbox" | "stripe-test"
 
 /** One founder inbox. Empty / invalid means skip notify — never invent an address. */
 export function readFoundersPaidEmail(env: NodeJS.Dict<string> = process.env): string | null {
@@ -13,19 +15,24 @@ export function readFoundersPaidEmail(env: NodeJS.Dict<string> = process.env): s
 
 export function foundersPaidNotify(input: {
   paid: PaidCheckout
-  stripeMode: StripeMode
+  mode: PaidNotifyMode
 }): { subject: string; text: string } {
-  const mode = input.stripeMode
+  const label =
+    input.mode === "paddle-live"
+      ? "paddle live"
+      : input.mode === "paddle-sandbox"
+        ? "paddle sandbox"
+        : "stripe test"
   const who = input.paid.email?.trim() || "(no customer email on the session)"
   return {
-    subject: `RiteStack pack paid · $${PACK_AMOUNT_DOLLARS} ${mode}`,
+    subject: `RiteStack pack paid · $${PACK_AMOUNT_DOLLARS} ${label}`,
     text: [
       "Someone paid the RiteStack pack.",
-      `Mode: ${mode}`,
+      `Mode: ${label}`,
       `Amount: $${PACK_AMOUNT_DOLLARS} once`,
       `Customer: ${who}`,
       `User id: ${input.paid.userId}`,
-      `Checkout session: ${input.paid.sessionId}`,
+      `Checkout: ${input.paid.sessionId}`,
       "",
       "7 days full ritual. Then $14 once.",
     ].join("\n"),
@@ -34,11 +41,11 @@ export function foundersPaidNotify(input: {
 
 export async function notifyFoundersPaid(
   paid: PaidCheckout,
-  stripeMode: StripeMode,
+  mode: PaidNotifyMode,
   env: NodeJS.Dict<string> = process.env
 ): Promise<boolean> {
   const to = readFoundersPaidEmail(env)
   if (!to) return false
-  const mail = foundersPaidNotify({ paid, stripeMode })
+  const mail = foundersPaidNotify({ paid, mode })
   return sendRiteStackMail({ to, ...mail })
 }

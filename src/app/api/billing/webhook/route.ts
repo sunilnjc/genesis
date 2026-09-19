@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     if (paid) {
       await applyPaidCheckout(paid)
       try {
-        await notifyFoundersPaid(paid, config.stripeMode)
+        await notifyFoundersPaid(paid, "stripe-test")
       } catch {
         // Pack grant already persisted. Founder mail is best-effort.
       }

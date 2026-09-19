@@ -74,7 +74,7 @@ export function UnlockApp() {
               {status.daysLeft != null
                 ? ` · ${status.daysLeft} day${status.daysLeft === 1 ? "" : "s"} left`
                 : ""}
-              . Pay now if you want to walk Stripe.
+              . Pay now if you want to walk Checkout.
             </p>
           ) : null}
           {paid ? (
@@ -89,12 +89,14 @@ export function UnlockApp() {
               onClick={() => void unlock({ returnTo: "/unlock" })}
             >
               {checkoutBusy
-                ? "Opening Stripe…"
+                ? status.checkoutProvider === "paddle"
+                  ? "Opening Paddle…"
+                  : "Opening Checkout…"
                 : canPay
                   ? `Pay / Unlock · $${PACK_AMOUNT_DOLLARS}`
                   : status.checkoutConfigured
                     ? "Sign in to start Checkout"
-                    : "Stripe not configured"}
+                    : "Checkout not configured"}
             </Button>
           )}
           {error ? (
@@ -108,9 +110,13 @@ export function UnlockApp() {
       </Card>
 
       <p className="text-[0.625rem] text-muted-foreground">
-        {status.stripeMode === "live"
-          ? "Live Checkout. This charges a real card for $14 once."
-          : "Stripe is still in test mode until live secrets are on the Worker. Test card 4242 4242 4242 4242."}
+        {status.checkoutProvider === "paddle"
+          ? status.paddleEnv === "live"
+            ? "Paddle Checkout. This charges a real card for $14 once. Paddle.com is the Merchant of Record."
+            : "Paddle sandbox. Not a live charge until PADDLE_ENV=live and live secrets are on the Worker."
+          : status.stripeMode === "test"
+            ? "Stripe test Checkout only. Not a live charge. Live $14 is Paddle. Test card 4242 4242 4242 4242."
+            : "Checkout is not configured."}
       </p>
       <Link href="/" className="text-xs text-muted-foreground underline-offset-4 hover:underline">
         Back to Decide

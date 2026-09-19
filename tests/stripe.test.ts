@@ -65,7 +65,7 @@ test("customer email is copied onto the Stripe receipt", () => {
   assert.equal(fields["line_items[0][price_data][unit_amount]"], "1400")
 })
 
-test("test Stripe keys are still accepted", () => {
+test("test Stripe keys are still accepted for local Checkout", () => {
   const config = readStripeConfig({
     STRIPE_SECRET_KEY: "sk_test_fixture",
     NEXT_PUBLIC_APP_URL: "https://ritestack.app",
@@ -74,16 +74,17 @@ test("test Stripe keys are still accepted", () => {
   assert.equal(config.liveMode, false)
 })
 
-test("live Stripe keys are accepted for Checkout", () => {
-  const config = readStripeConfig({
-    STRIPE_SECRET_KEY: "sk_live_fixture",
-    NEXT_PUBLIC_APP_URL: "https://ritestack.app",
-    STRIPE_PRICE_ID: "price_live_fixture",
-    STRIPE_WEBHOOK_SECRET: "whsec_live_fixture",
-  })
-  assert.equal(config.stripeMode, "live")
-  assert.equal(config.liveMode, true)
-  assert.equal(config.priceId, "price_live_fixture")
+test("live Stripe keys are refused — live $14 is Paddle", () => {
+  assert.throws(
+    () =>
+      readStripeConfig({
+        STRIPE_SECRET_KEY: "sk_live_fixture",
+        NEXT_PUBLIC_APP_URL: "https://ritestack.app",
+        STRIPE_PRICE_ID: "price_live_fixture",
+        STRIPE_WEBHOOK_SECRET: "whsec_live_fixture",
+      }),
+    StripeConfigError
+  )
 })
 
 test("non-Stripe secrets are still refused", () => {

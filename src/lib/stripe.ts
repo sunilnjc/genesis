@@ -3,10 +3,12 @@ import {
   type CheckoutReturnPath,
 } from "./checkout-return.ts"
 import { PACK_AMOUNT_CENTS, PACK_NAME, PACK_SKU } from "./entitlement.ts"
+import { hmacSha256Hex, timingSafeEqual } from "./hmac.ts"
 
 export const STRIPE_API = "https://api.stripe.com/v1"
 export const STRIPE_API_VERSION = "2024-06-20"
-export { checkedCheckoutUrl } from "./checkout-url.ts"
+export { checkedCheckoutUrl, checkedStripeCheckoutUrl } from "./checkout-url.ts"
+export { hmacSha256Hex } from "./hmac.ts"
 
 export class StripeConfigError extends Error {
   constructor(message: string) {
@@ -15,19 +17,18 @@ export class StripeConfigError extends Error {
   }
 }
 
-export type StripeMode = "test" | "live"
+export type StripeMode = "test"
 
 export type StripeConfig = {
   secretKey: string
   webhookSecret: string | null
   priceId: string | null
   appUrl: string
-  liveMode: boolean
+  liveMode: false
   stripeMode: StripeMode
 }
 
 export function stripeModeFromSecretKey(secretKey: string): StripeMode | null {
-  if (secretKey.startsWith("sk_live_")) return "live"
   if (secretKey.startsWith("sk_test_")) return "test"
   return null
 }
@@ -36,16 +37,19 @@ export function readStripeConfig(env: NodeJS.Dict<string> = process.env): Stripe
   const secretKey = (env.STRIPE_SECRET_KEY ?? "").trim()
   if (!secretKey) {
     throw new StripeConfigError(
-      "STRIPE_SECRET_KEY is not set. Use sk_test_… locally, or sk_live_… on the Worker after Stripe live is ready. Do not paste keys into chat."
+      "STRIPE_SECRET_KEY is not set. Local/test Checkout still accepts sk_test_…. Live $14 is Paddle, not Stripe."
+    )
+  }
+  if (secretKey.startsWith("sk_live_")) {
+    throw new StripeConfigError(
+      "Live Stripe is not the RiteStack payment path. Use Paddle (PADDLE_API_KEY) for live $14, or sk_test_ for local Checkout. Do not paste keys into chat."
     )
   }
   const stripeMode = stripeModeFromSecretKey(secretKey)
   if (!stripeMode) {
-    throw new StripeConfigError(
-      "STRIPE_SECRET_KEY must be a Stripe secret (sk_test_… or sk_live_…)."
-    )
+    throw new StripeConfigError("STRIPE_SECRET_KEY must be a Stripe test secret (sk_test_…).")
   }
-  const liveMode = stripeMode === "live"
+  const liveMode = false as const
 
   const appUrl = (env.NEXT_PUBLIC_APP_URL ?? env.APP_URL ?? "").trim().replace(/\/$/, "")
   if (!appUrl) {
@@ -133,27 +137,6 @@ export function parseStripeSignatureHeader(header: string): { timestamp: number;
     throw new Error("Stripe-Signature header is missing t= or v1=.")
   }
   return { timestamp, signatures }
-}
-
-function timingSafeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false
-  let mismatch = 0
-  for (let i = 0; i < a.length; i += 1) {
-    mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i)
-  }
-  return mismatch === 0
-}
-
-export async function hmacSha256Hex(secret: string, payload: string): Promise<string> {
-  const key = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"]
-  )
-  const signature = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(payload))
-  return Array.from(new Uint8Array(signature), (byte) => byte.toString(16).padStart(2, "0")).join("")
 }
 
 export async function verifyStripeWebhook(
