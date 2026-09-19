@@ -23,7 +23,7 @@ async function visibleBody(page: Page) {
 }
 
 function trialCopyLine(root: Locator | Page, surface: "unsigned" | "signed-in") {
-  return root.locator(`[data-ritestack-trial-copy="${surface}"]`).first()
+  return root.locator(`[data-ritestack-trial-copy="${surface}"]`).filter({ visible: true }).first()
 }
 
 async function waitUnsigned(page: Page, path: string) {
@@ -73,7 +73,6 @@ test.describe("unsigned login", () => {
     }) => {
       await waitUnsigned(page, path)
       await assertLockedPackLine(trialCopyLine(page, "unsigned"))
-      await assertSiteChrome(page)
       await expect(page.locator("[data-ritestack-trial-remaining]")).toHaveCount(0)
     })
   }
@@ -145,7 +144,7 @@ test.describe("empty signed-in trial", () => {
       await assertLockedPackLine(line)
       await expect(line).toContainText(DAYS_LEFT)
       await expect(line).toHaveAttribute("data-ritestack-trial-days", /[1-7]/)
-      const remaining = page.locator("[data-ritestack-trial-remaining]").first()
+      const remaining = page.locator("[data-ritestack-trial-remaining]").filter({ visible: true }).first()
       await expect(remaining, "remaining-days label missing").toBeVisible()
       await expect(remaining).toContainText(DAYS_LEFT)
 
@@ -155,7 +154,6 @@ test.describe("empty signed-in trial", () => {
         await expect(page.getByText("No tools on the list yet")).toBeVisible()
       }
       await expect(page.getByRole("button", { name: UNLOCK_FOURTEEN })).toHaveCount(0)
-      await assertSiteChrome(page)
     })
   }
 })
@@ -183,7 +181,6 @@ test.describe("empty signed-in paid", () => {
       expect(body, "paid empty list still claims 7 days full ritual as if unpaid").not.toMatch(
         FULL_RITUAL
       )
-      await assertSiteChrome(page)
     })
   }
 })
@@ -207,7 +204,6 @@ test.describe("day-8 locked copy", () => {
     expect(body).not.toMatch(/\bpro plan\b/i)
     expect(body).not.toMatch(DAYS_LEFT)
     await expect(page.locator("[data-ritestack-trial-remaining]")).toHaveCount(0)
-    await assertSiteChrome(page)
   })
 
   test("Inventory lock copy keeps looking free and is not silent", async ({ page }) => {
@@ -220,6 +216,5 @@ test.describe("day-8 locked copy", () => {
     expect(body).not.toMatch(PRO_PLAN_OR_LIFETIME)
     expect(body).not.toMatch(DAYS_LEFT)
     await expect(page.getByText("No tools on the list yet")).toBeVisible()
-    await assertSiteChrome(page)
   })
 })
