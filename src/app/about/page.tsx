@@ -62,17 +62,6 @@ export default function AboutPage() {
           Not a Gmail scanner. Not Plaid. We don’t read your inbox or sync a bank feed. You
           already know the tools. Looking at the list does not require a scrape.
         </p>
-        <p className="text-muted-foreground">
-          Not{" "}
-          <a
-            href="https://www.subscriptiongraveyard.com"
-            className="underline underline-offset-4 hover:text-foreground"
-          >
-            subscriptiongraveyard.com
-          </a>
-          . That product hunts subscriptions in mail. RiteStack is a decide date for a stack
-          you typed yourself.
-        </p>
       </section>
 
       <section className="space-y-3 text-sm leading-relaxed" data-ritestack-copy="pricing">
