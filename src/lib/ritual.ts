@@ -1,5 +1,5 @@
-import { daysBetween } from "@/lib/dates"
-import type { QueueReason, Subscription } from "@/lib/types"
+import { daysBetween } from "./dates.ts"
+import type { QueueReason, Subscription } from "./types.ts"
 
 export const RENEW_SOON_DAYS = 14
 export const LAST_USED_STALE_DAYS = 30
@@ -95,4 +95,14 @@ export function newId(): string {
     return crypto.randomUUID()
   }
   return `sub_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+}
+
+/** Send a paused tool back to Decide as undecided. Does not invent last-used. */
+export function unpauseSubscription(sub: Subscription, now: string): Subscription {
+  return {
+    ...sub,
+    decision: "undecided",
+    remindAt: null,
+    updatedAt: now,
+  }
 }

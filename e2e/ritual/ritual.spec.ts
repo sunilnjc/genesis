@@ -148,9 +148,26 @@ test.describe("signed-in ritual on ritestack.app", () => {
     await expect(inventoryRow(page, KEEP).getByText("Keep", { exact: true })).toBeVisible()
     await expect(inventoryRow(page, PAUSE).getByText("Pause", { exact: true })).toBeVisible()
     await expect(inventoryRow(page, CUT).getByText("Cut", { exact: true })).toBeVisible()
+    await expect(inventoryRow(page, PAUSE).getByRole("button", { name: /^Unpause/ })).toBeVisible()
+    await expect(inventoryRow(page, KEEP).getByRole("button", { name: /^Unpause/ })).toHaveCount(0)
     await expect(statsStrip(page).getByText("Monthly burn")).toBeVisible()
     await expect(statsStrip(page).locator("div").filter({ hasText: "Monthly burn" }).getByText("$33", { exact: true })).toBeVisible()
     await expect(statsStrip(page).locator("div").filter({ hasText: "Cut this pass" }).getByText("$33", { exact: true })).toBeVisible()
     await assertOnlyOwnRows(page)
+
+    const unpaused = page.waitForResponse(
+      (response) =>
+        response.url().includes("/rest/v1/subscriptions") &&
+        response.request().method() !== "GET" &&
+        response.ok()
+    )
+    await inventoryRow(page, PAUSE).getByRole("button", { name: /^Unpause/ }).click()
+    await unpaused
+    await expect(inventoryRow(page, PAUSE).getByText("Undecided", { exact: true })).toBeVisible()
+    await expect(inventoryRow(page, PAUSE).getByRole("button", { name: /^Unpause/ })).toHaveCount(0)
+
+    await page.getByRole("tab", { name: /^Decide/ }).click()
+    await expect(decideRow(page, PAUSE)).toBeVisible()
+    await expect(decideRow(page, PAUSE).getByRole("button", { name: "Pause", exact: true })).toBeVisible()
   })
 })

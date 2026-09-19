@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { Alert02Icon, Add01Icon, InboxIcon, Link01Icon, MoreHorizontalIcon, PauseIcon, ScissorIcon, Tick02Icon } from "@hugeicons/core-free-icons"
+import { Alert02Icon, Add01Icon, InboxIcon, Link01Icon, MoreHorizontalIcon, PauseIcon, PlayIcon, ScissorIcon, Tick02Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { SubscriptionForm, parseCost } from "@/components/subscription-form"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -42,6 +42,7 @@ import {
   PAUSE_REMIND_DAYS,
   queueReasons,
   reasonLabel,
+  unpauseSubscription,
 } from "@/lib/ritual"
 import { sampleStack } from "@/lib/sample-data"
 import { StorageError } from "@/lib/storage"
@@ -194,6 +195,17 @@ export function GraveyardApp({
           cutAt: decision === "cut" ? today : null,
           updatedAt: now,
         }
+      })
+    )
+  }
+
+  function unpause(id: string) {
+    if (!ritual) return
+    const now = new Date().toISOString()
+    void withSave((current) =>
+      current.map((row) => {
+        if (row.id !== id || row.decision !== "pause") return row
+        return unpauseSubscription(row, now)
       })
     )
   }
@@ -399,6 +411,7 @@ export function GraveyardApp({
               rows={queue}
               ritual={ritual}
               onDecide={decide}
+              onUnpause={unpause}
               onEdit={openEdit}
             />
           )
@@ -447,6 +460,7 @@ export function GraveyardApp({
               rows={subscriptions}
               ritual={ritual}
               onEdit={openEdit}
+              onUnpause={unpause}
               onRemove={remove}
             />
           </>
@@ -546,12 +560,14 @@ function QueueSection({
   rows,
   ritual,
   onDecide,
+  onUnpause,
   onEdit,
 }: {
   today: string
   rows: Subscription[]
   ritual: boolean
   onDecide: (id: string, decision: Decision) => void
+  onUnpause: (id: string) => void
   onEdit: (row: Subscription) => void
 }) {
   return (
@@ -583,6 +599,7 @@ function QueueSection({
                 today={today}
                 ritual={ritual}
                 onDecide={onDecide}
+                onUnpause={onUnpause}
                 onEdit={onEdit}
               />
             ))}
@@ -631,7 +648,12 @@ function QueueSection({
                     </TableCell>
                     <TableCell className="text-right">
                       {ritual ? (
-                        <DecisionActions row={row} onDecide={onDecide} onEdit={onEdit} />
+                        <DecisionActions
+                          row={row}
+                          onDecide={onDecide}
+                          onUnpause={onUnpause}
+                          onEdit={onEdit}
+                        />
                       ) : (
                         <span className="text-xs text-muted-foreground">Locked</span>
                       )}
@@ -652,12 +674,14 @@ function QueueCard({
   today,
   ritual,
   onDecide,
+  onUnpause,
   onEdit,
 }: {
   row: Subscription
   today: string
   ritual: boolean
   onDecide: (id: string, decision: Decision) => void
+  onUnpause: (id: string) => void
   onEdit: (row: Subscription) => void
 }) {
   return (
@@ -678,7 +702,9 @@ function QueueCard({
       <CardContent className="space-y-3">
         <ReasonBadges row={row} today={today} />
         <CancelLink row={row} ritual={ritual} />
-        {ritual ? <HugeDecisionActions row={row} onDecide={onDecide} /> : null}
+        {ritual ? (
+          <HugeDecisionActions row={row} onDecide={onDecide} onUnpause={onUnpause} />
+        ) : null}
         <Button size="sm" variant="ghost" className="h-8 px-0 text-muted-foreground" onClick={() => onEdit(row)}>
           Edit
         </Button>
@@ -692,19 +718,21 @@ function InventorySection({
   rows,
   ritual,
   onEdit,
+  onUnpause,
   onRemove,
 }: {
   today: string
   rows: Subscription[]
   ritual: boolean
   onEdit: (row: Subscription) => void
+  onUnpause: (id: string) => void
   onRemove: (id: string) => void
 }) {
   return (
     <section className="space-y-3" data-list="inventory">
       <div>
         <p className="text-xs text-muted-foreground">
-          Full list. Add and edit here. Keep / cut / pause is on Decide.
+          Full list. Add and edit here. Unpause a paused tool to send it back to Decide.
         </p>
       </div>
       <div className="grid gap-2 md:hidden">
@@ -715,6 +743,7 @@ function InventorySection({
             today={today}
             ritual={ritual}
             onEdit={onEdit}
+            onUnpause={onUnpause}
           />
         ))}
       </div>
@@ -748,12 +777,15 @@ function InventorySection({
                   {row.lastUsed ? formatDate(row.lastUsed) : "Unknown"}
                 </TableCell>
                 <TableCell>
-                  <div className="flex flex-col gap-1">
+                  <div className="flex flex-col items-start gap-1.5">
                     {decisionBadge(row.decision)}
                     {row.decision === "pause" && row.remindAt ? (
                       <span className="text-[0.625rem] text-muted-foreground">
                         Remind {formatRelativeDay(row.remindAt, today)}
                       </span>
+                    ) : null}
+                    {row.decision === "pause" && ritual ? (
+                      <UnpauseButton name={row.name} onUnpause={() => onUnpause(row.id)} />
                     ) : null}
                   </div>
                 </TableCell>
@@ -765,6 +797,11 @@ function InventorySection({
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      {row.decision === "pause" && ritual ? (
+                        <DropdownMenuItem onClick={() => onUnpause(row.id)}>
+                          Unpause
+                        </DropdownMenuItem>
+                      ) : null}
                       <DropdownMenuItem onClick={() => onEdit(row)}>Edit</DropdownMenuItem>
                       {row.cancelUrl && ritual ? (
                         <DropdownMenuItem onClick={() => openCancelUrl(row.cancelUrl)}>
@@ -792,11 +829,13 @@ function InventoryCard({
   today,
   ritual,
   onEdit,
+  onUnpause,
 }: {
   row: Subscription
   today: string
   ritual: boolean
   onEdit: (row: Subscription) => void
+  onUnpause: (id: string) => void
 }) {
   return (
     <Card size="sm" className={row.decision === "cut" ? "opacity-70" : undefined}>
@@ -818,6 +857,13 @@ function InventoryCard({
       </CardHeader>
       <CardContent className="flex flex-col items-start gap-2">
         <CancelLink row={row} ritual={ritual} />
+        {row.decision === "pause" && ritual ? (
+          <UnpauseButton
+            name={row.name}
+            onUnpause={() => onUnpause(row.id)}
+            className="h-11 px-3"
+          />
+        ) : null}
         <Button size="sm" variant="ghost" className="h-8 px-0 text-muted-foreground" onClick={() => onEdit(row)}>
           Edit
         </Button>
@@ -883,30 +929,77 @@ function ReasonBadges({ row, today }: { row: Subscription; today: string }) {
   )
 }
 
+function UnpauseButton({
+  name,
+  onUnpause,
+  className,
+}: {
+  name: string
+  onUnpause: () => void
+  className?: string
+}) {
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      aria-label={`Unpause ${name}`}
+      data-action="unpause"
+      className={className}
+      onClick={onUnpause}
+    >
+      <HugeiconsIcon icon={PlayIcon} strokeWidth={2} data-icon="inline-start" />
+      Unpause
+    </Button>
+  )
+}
+
 function HugeDecisionActions({
   row,
   onDecide,
+  onUnpause,
 }: {
   row: Subscription
   onDecide: (id: string, decision: Decision) => void
+  onUnpause: (id: string) => void
 }) {
+  const paused = row.decision === "pause"
   return (
     <div className="grid grid-cols-3 gap-1.5">
-      {([
-        ["keep", "Keep", "outline"],
-        ["pause", "Pause", "outline"],
-        ["cut", "Cut", "destructive"],
-      ] as const).map(([decision, label, variant]) => (
-        <div key={decision} className="min-w-0">
+      <div className="min-w-0">
+        <Button
+          className="h-11 w-full min-w-0 px-1 text-sm"
+          variant="outline"
+          onClick={() => onDecide(row.id, "keep")}
+        >
+          Keep
+        </Button>
+      </div>
+      <div className="min-w-0">
+        {paused ? (
+          <UnpauseButton
+            name={row.name}
+            onUnpause={() => onUnpause(row.id)}
+            className="h-11 w-full min-w-0 px-1 text-sm"
+          />
+        ) : (
           <Button
             className="h-11 w-full min-w-0 px-1 text-sm"
-            variant={variant}
-            onClick={() => onDecide(row.id, decision)}
+            variant="outline"
+            onClick={() => onDecide(row.id, "pause")}
           >
-            {label}
+            Pause
           </Button>
-        </div>
-      ))}
+        )}
+      </div>
+      <div className="min-w-0">
+        <Button
+          className="h-11 w-full min-w-0 px-1 text-sm"
+          variant="destructive"
+          onClick={() => onDecide(row.id, "cut")}
+        >
+          Cut
+        </Button>
+      </div>
     </div>
   )
 }
@@ -914,10 +1007,12 @@ function HugeDecisionActions({
 function DecisionActions({
   row,
   onDecide,
+  onUnpause,
   onEdit,
 }: {
   row: Subscription
   onDecide: (id: string, decision: Decision) => void
+  onUnpause: (id: string) => void
   onEdit: (row: Subscription) => void
 }) {
   return (
@@ -926,10 +1021,14 @@ function DecisionActions({
         <HugeiconsIcon icon={Tick02Icon} strokeWidth={2} data-icon="inline-start" />
         Keep
       </Button>
-      <Button size="sm" variant="outline" onClick={() => onDecide(row.id, "pause")}>
-        <HugeiconsIcon icon={PauseIcon} strokeWidth={2} data-icon="inline-start" />
-        Pause
-      </Button>
+      {row.decision === "pause" ? (
+        <UnpauseButton name={row.name} onUnpause={() => onUnpause(row.id)} />
+      ) : (
+        <Button size="sm" variant="outline" onClick={() => onDecide(row.id, "pause")}>
+          <HugeiconsIcon icon={PauseIcon} strokeWidth={2} data-icon="inline-start" />
+          Pause
+        </Button>
+      )}
       <Button size="sm" variant="destructive" onClick={() => onDecide(row.id, "cut")}>
         <HugeiconsIcon icon={ScissorIcon} strokeWidth={2} data-icon="inline-start" />
         Cut
