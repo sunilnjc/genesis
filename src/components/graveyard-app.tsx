@@ -289,10 +289,12 @@ export function GraveyardApp({
               {hydrated ? formatMoney(burn) : "—"}
             </p>
             <p className="text-xs text-muted-foreground">Monthly burn · still paying</p>
+            <TrialBanner status={access} />
           </>
         ) : (
           <>
             <p className="font-heading text-xl font-medium tracking-tight">Decide</p>
+            <TrialBanner status={access} />
             <p className="text-xs text-muted-foreground">
               {!hydrated
                 ? "Loading your queue…"
@@ -312,10 +314,9 @@ export function GraveyardApp({
                 RiteStack
               </p>
               <h1 className="font-heading text-lg font-medium tracking-tight sm:text-xl">
-                {view === "decide"
-                  ? "You don’t miss the cancel button. You miss a date to decide."
-                  : "Inventory"}
+                {view === "decide" ? "Decide" : "Inventory"}
               </h1>
+              <TrialBanner status={access} />
               <p className="max-w-2xl text-xs/relaxed text-muted-foreground">
                 {view === "decide"
                   ? "Keep, cut, or pause — one sitting. The full list lives in Inventory."
@@ -362,7 +363,6 @@ export function GraveyardApp({
           </Alert>
         ) : null}
 
-        {access.state === "trial" ? <TrialBanner status={access} /> : null}
         {access.state === "paywall" && view === "inventory" ? (
           <Alert>
             <AlertTitle>Ritual locked</AlertTitle>

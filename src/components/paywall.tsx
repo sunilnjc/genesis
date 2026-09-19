@@ -2,6 +2,7 @@
 
 import { Alert02Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
+import { TrialCopyLine } from "@/components/trial-copy"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -9,12 +10,11 @@ import { PACK_AMOUNT_DOLLARS } from "@/lib/entitlement"
 import type { BillingStatus } from "@/lib/use-entitlement"
 
 export function TrialBanner({ status }: { status: BillingStatus }) {
-  if (status.state !== "trial") return null
   return (
-    <Alert>
-      <AlertTitle>7-day ritual trial</AlertTitle>
-      <AlertDescription>{status.message}</AlertDescription>
-    </Alert>
+    <TrialCopyLine
+      surface="signed-in"
+      daysLeft={status.state === "trial" ? status.daysLeft : null}
+    />
   )
 }
 

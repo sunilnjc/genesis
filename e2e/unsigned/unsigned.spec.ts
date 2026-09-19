@@ -43,6 +43,10 @@ async function assertEmptyNoSeed(page: Page) {
   await expect(page.locator("[data-ritestack-user-id]")).toHaveCount(0)
   await expect(page.getByRole("heading", { name: "Sign in to your stack" })).toBeVisible()
   await expect(page.getByText("the AI and dev tools you pay for.")).toBeVisible()
+  await expect(page.locator('[data-ritestack-trial-copy="unsigned"]')).toBeVisible()
+  await expect(
+    page.getByText("7 days full ritual after sign-in. Then $14 once. Looking at your stack stays free.")
+  ).toBeVisible()
 
   const body = await page.locator("body").innerText()
   for (const seed of FOUNDER_SEED) {

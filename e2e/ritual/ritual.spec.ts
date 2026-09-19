@@ -93,7 +93,9 @@ test.describe("signed-in ritual on ritestack.app", () => {
     await assertOnlyOwnRows(page)
 
     await expect(page.locator("[data-view='decide']")).toBeVisible()
-    await expect(page.getByRole("heading", { name: /You don’t miss the cancel button/ })).toBeVisible()
+    await expect(page.getByRole("heading", { name: "Decide" })).toBeVisible()
+    await expect(page.getByText(/7 days full ritual after sign-in/i).first()).toBeVisible()
+    await expect(page.getByText(/\$14 once/i).first()).toBeVisible()
     await expect(page.getByText("Nothing to decide")).toBeVisible()
     await expect(page.getByText("Full list. Add and edit here.")).toHaveCount(0)
     await expect(page.getByRole("button", { name: /Add (a )?subscription/i })).toHaveCount(0)
