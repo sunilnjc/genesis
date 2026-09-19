@@ -1,3 +1,4 @@
+import { jwtFromRequest } from "@/lib/billing-auth"
 import { entitlement, type Entitlement } from "@/lib/entitlement"
 import {
   authUserFromJwt,
@@ -17,7 +18,6 @@ import {
   type PaidCheckout,
 } from "@/lib/stripe"
 
-const BEARER = /^Bearer\s+/i
 const LOCAL_USER_COOKIE = "ritestack_local_id"
 const PACK_COOKIE = "ritestack_pack_session"
 
@@ -28,15 +28,9 @@ export type BillingStatus = Entitlement & {
   message: string
 }
 
-function bearerFrom(request: Request): string {
-  const header = request.headers.get("authorization") ?? ""
-  if (BEARER.test(header)) return header.replace(BEARER, "").trim()
-  return ""
-}
-
 export async function currentUser(request: Request): Promise<AuthUser | null> {
   const config = readSupabaseConfig()
-  const jwt = bearerFrom(request)
+  const jwt = jwtFromRequest(request)
   if (!config || !jwt) return null
   return authUserFromJwt(config, jwt)
 }
@@ -90,7 +84,7 @@ export async function billingStatus(request: Request): Promise<{
   let profile: ProfileRow | null = null
 
   if (user && supabase) {
-    profile = await ensureOwnProfile(supabase, bearerFrom(request))
+    profile = await ensureOwnProfile(supabase, jwtFromRequest(request))
   }
 
   let packPaidAt = profile?.pack_paid_at ?? null
@@ -145,7 +139,7 @@ export async function startCheckout(request: Request): Promise<{ url: string; se
   }
 
   if (user && supabase) {
-    const profile = await ensureOwnProfile(supabase, bearerFrom(request))
+    const profile = await ensureOwnProfile(supabase, jwtFromRequest(request))
     if (profile?.pack_paid_at) {
       throw new Error("The RiteStack pack is already unlocked on this account.")
     }

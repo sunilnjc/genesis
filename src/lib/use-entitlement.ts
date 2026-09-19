@@ -1,6 +1,8 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { useAuth } from "@/lib/auth"
+import { billingAuthHeaders } from "@/lib/billing-auth"
 import { checkedCheckoutUrl } from "@/lib/checkout-url"
 import { entitlement, type Entitlement, type EntitlementState } from "@/lib/entitlement"
 
@@ -35,18 +37,25 @@ function readSessionId(): string | null {
 }
 
 export function useEntitlement() {
+  const auth = useAuth()
+  const accessToken = auth.session?.access_token ?? null
+  const authReady = auth.status !== "loading"
   const [status, setStatus] = useState<BillingStatus>(LOCAL_UNLIMITED)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [checkoutBusy, setCheckoutBusy] = useState(false)
 
   const refresh = useCallback(async () => {
+    if (!authReady) return
     try {
       const sessionId = readSessionId()
       const path = sessionId
         ? `/api/billing/status?session_id=${encodeURIComponent(sessionId)}`
         : "/api/billing/status"
-      const response = await fetch(path, { credentials: "same-origin" })
+      const response = await fetch(path, {
+        credentials: "same-origin",
+        headers: billingAuthHeaders(accessToken),
+      })
       const body = (await response.json()) as BillingStatus & { error?: string }
       if (!response.ok) {
         throw new Error(body.error || "Could not load billing status.")
@@ -58,13 +67,14 @@ export function useEntitlement() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [accessToken, authReady])
 
   useEffect(() => {
-    // Network load on mount and after Checkout return (session_id in the URL).
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch on mount
+    if (!authReady) return
+    // Network load once the cookie/JWT session is known, and after Checkout return.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch on auth ready
     void refresh()
-  }, [refresh])
+  }, [authReady, refresh])
 
   const display = useMemo((): BillingStatus => {
     const preview = previewOverride()
@@ -100,6 +110,7 @@ export function useEntitlement() {
       const response = await fetch("/api/billing/checkout", {
         method: "POST",
         credentials: "same-origin",
+        headers: billingAuthHeaders(accessToken),
       })
       const body = (await response.json()) as { url?: unknown; error?: string }
       if (!response.ok) {
@@ -110,7 +121,7 @@ export function useEntitlement() {
       setCheckoutBusy(false)
       setError(cause instanceof Error ? cause.message : "Could not start Stripe Checkout.")
     }
-  }, [])
+  }, [accessToken])
 
   return { status: display, loading, error, checkoutBusy, refresh, unlock }
 }
