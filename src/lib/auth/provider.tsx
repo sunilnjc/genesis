@@ -10,7 +10,10 @@ const AuthContext = createContext<RiteStackAuth | null>(null)
 
 function redirectTo() {
   if (typeof window === "undefined") return undefined
-  return `${window.location.origin}${AUTH_CALLBACK_PATH}`
+  const next = window.location.pathname === "/unlock" ? "/unlock" : ""
+  const url = new URL(AUTH_CALLBACK_PATH, window.location.origin)
+  if (next) url.searchParams.set("next", next)
+  return url.toString()
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {

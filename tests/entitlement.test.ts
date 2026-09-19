@@ -1,6 +1,12 @@
 import assert from "node:assert/strict"
 import test from "node:test"
-import { addTrialDays, entitlement, PACK_AMOUNT_CENTS, TRIAL_DAYS } from "../src/lib/entitlement.ts"
+import {
+  addTrialDays,
+  canStartPackCheckout,
+  entitlement,
+  PACK_AMOUNT_CENTS,
+  TRIAL_DAYS,
+} from "../src/lib/entitlement.ts"
 
 test("viewing the list is always free", () => {
   for (const input of [
@@ -59,4 +65,21 @@ test("paid pack unlocks ritual even after trial", () => {
 test("pack is fourteen dollars once, not a subscription", () => {
   assert.equal(PACK_AMOUNT_CENTS, 1400)
   assert.equal(TRIAL_DAYS, 7)
+})
+
+test("trial still unlocks ritual for everyone; $14 Checkout is optional during those 7 days", () => {
+  const now = new Date("2026-09-19T12:00:00.000Z")
+  const row = entitlement({
+    now,
+    hasSession: true,
+    trialEndsAt: addTrialDays(now, TRIAL_DAYS).toISOString(),
+    packPaidAt: null,
+    checkoutEnabled: true,
+  })
+  assert.equal(row.state, "trial")
+  assert.equal(row.ritual, true)
+  assert.equal(row.viewList, true)
+  assert.equal(canStartPackCheckout(row), true)
+  assert.equal(canStartPackCheckout({ state: "paywall", checkoutEnabled: true }), true)
+  assert.equal(canStartPackCheckout({ state: "paid", checkoutEnabled: false }), false)
 })

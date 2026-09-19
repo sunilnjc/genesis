@@ -47,7 +47,9 @@ App: [http://127.0.0.1:4317](http://127.0.0.1:4317) (use another port if 4317 is
 
 7 days of keep / cut / pause, cancel URLs, and pause reminders after signup. Day 8: paywall until the **$14 one-time** RiteStack pack is paid. Viewing and editing the inventory list stays free. This is Checkout `mode=payment`, not a subscription trial. The optional $6/mo SKU is not wired.
 
-Auth is not on `main` yet. The SQL assumes Supabase `auth.uid()` and starts `profiles.trial_ends_at` on signup. Until magic-link lands, localhost stays unlocked (founder localStorage). Preview the paywall at `/?preview=paywall` (Decide) or `/inventory?preview=paywall` (Inventory).
+Decide and Inventory do **not** show a pay button while the trial is active. Signed-in testers can open **[/unlock](https://ritestack.app/unlock)** to start $14 Checkout anyway (Stripe test mode, card `4242`). That page does not end the 7-day trial for anyone else.
+
+Preview the paywall at `/?preview=paywall` (Decide) or `/inventory?preview=paywall` (Inventory) on localhost.
 
 ### Stripe test mode
 

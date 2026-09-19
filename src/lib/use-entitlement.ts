@@ -103,25 +103,33 @@ export function useEntitlement() {
     return status
   }, [status])
 
-  const unlock = useCallback(async () => {
-    setCheckoutBusy(true)
-    setError(null)
-    try {
-      const response = await fetch("/api/billing/checkout", {
-        method: "POST",
-        credentials: "same-origin",
-        headers: billingAuthHeaders(accessToken),
-      })
-      const body = (await response.json()) as { url?: unknown; error?: string }
-      if (!response.ok) {
-        throw new Error(body.error || "Could not start Stripe Checkout.")
+  const unlock = useCallback(
+    async (options?: { returnTo?: "/unlock" | "/" }) => {
+      setCheckoutBusy(true)
+      setError(null)
+      try {
+        const returnTo = options?.returnTo
+        const response = await fetch("/api/billing/checkout", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: {
+            ...billingAuthHeaders(accessToken),
+            ...(returnTo ? { "Content-Type": "application/json" } : {}),
+          },
+          body: returnTo ? JSON.stringify({ returnTo }) : undefined,
+        })
+        const body = (await response.json()) as { url?: unknown; error?: string }
+        if (!response.ok) {
+          throw new Error(body.error || "Could not start Stripe Checkout.")
+        }
+        window.location.assign(checkedCheckoutUrl(body.url))
+      } catch (cause) {
+        setCheckoutBusy(false)
+        setError(cause instanceof Error ? cause.message : "Could not start Stripe Checkout.")
       }
-      window.location.assign(checkedCheckoutUrl(body.url))
-    } catch (cause) {
-      setCheckoutBusy(false)
-      setError(cause instanceof Error ? cause.message : "Could not start Stripe Checkout.")
-    }
-  }, [accessToken])
+    },
+    [accessToken]
+  )
 
   return { status: display, loading, error, checkoutBusy, refresh, unlock }
 }

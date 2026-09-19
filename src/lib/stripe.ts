@@ -1,3 +1,7 @@
+import {
+  checkoutReturnUrls,
+  type CheckoutReturnPath,
+} from "./checkout-return.ts"
 import { PACK_AMOUNT_CENTS, PACK_NAME, PACK_SKU } from "./entitlement.ts"
 
 export const STRIPE_API = "https://api.stripe.com/v1"
@@ -65,13 +69,13 @@ export function checkoutSessionFields(input: {
   priceId: string | null
   userId: string
   email?: string | null
+  returnTo?: CheckoutReturnPath
 }): CheckoutFields {
-  const success = `${input.appUrl}/?checkout=success&session_id={CHECKOUT_SESSION_ID}`
-  const cancel = `${input.appUrl}/?checkout=cancel`
+  const { success_url, cancel_url } = checkoutReturnUrls(input.appUrl, input.returnTo ?? "/")
   const fields: CheckoutFields = {
     mode: "payment",
-    success_url: success,
-    cancel_url: cancel,
+    success_url,
+    cancel_url,
     client_reference_id: input.userId,
     "metadata[user_id]": input.userId,
     "metadata[sku]": PACK_SKU,

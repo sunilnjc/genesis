@@ -1,4 +1,5 @@
 import { jwtFromRequest } from "@/lib/billing-auth"
+import { checkoutReturnPathFromRequest } from "@/lib/checkout-return"
 import { entitlement, type Entitlement } from "@/lib/entitlement"
 import {
   authUserFromJwt,
@@ -145,6 +146,8 @@ export async function startCheckout(request: Request): Promise<{ url: string; se
     }
   }
 
+  const returnTo = await checkoutReturnPathFromRequest(request)
+
   const session = await stripeRequest(
     config,
     "POST",
@@ -154,6 +157,7 @@ export async function startCheckout(request: Request): Promise<{ url: string; se
       priceId: config.priceId,
       userId,
       email,
+      returnTo,
     })
   )
   const url = checkedCheckoutUrl(
