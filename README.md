@@ -31,7 +31,7 @@ Other agents: import `{ useAuth, getUserId, getSession }` from `@/lib/auth`. `us
 - Local Simple Icons (and a CoinGecko gecko mark) on matching names, in brand color; unknown tools get a letter, not a fake logo
 - Optional extra rows from **Load sample stack** stay labeled **Sample**
 - Data: **localhost** uses `localStorage` (founder seed). **Hosted** requires login and loads only that user’s rows from Supabase. No `service_role` in the browser. No Plaid, no auto-cancel.
-- **$14 one-time pack** (Stripe Checkout, test mode): 7 days of full ritual after signup, then paywall. The list stays free. See [Payments](#payments).
+- **$14 one-time pack** (Stripe Checkout): 7 days of full ritual after signup, then paywall. The list stays free. See [Payments](#payments).
 
 ## Run locally
 
@@ -47,27 +47,35 @@ App: [http://127.0.0.1:4317](http://127.0.0.1:4317) (use another port if 4317 is
 
 7 days of keep / cut / pause, cancel URLs, and pause reminders after signup. Day 8: paywall until the **$14 one-time** RiteStack pack is paid. Viewing and editing the inventory list stays free. This is Checkout `mode=payment`, not a subscription trial. The optional $6/mo SKU is not wired.
 
-Decide and Inventory do **not** show a pay button while the trial is active. Signed-in testers can open **[/unlock](https://ritestack.app/unlock)** to start $14 Checkout anyway (Stripe test mode, card `4242`). That page does not end the 7-day trial for anyone else.
+Decide and Inventory do **not** show a pay button while the trial is active. Signed-in testers can open **[/unlock](https://ritestack.app/unlock)** to start $14 Checkout during the trial. That page does not end the 7-day trial for anyone else.
 
 Preview the paywall at `/?preview=paywall` (Decide) or `/inventory?preview=paywall` (Inventory) on localhost.
 
-### Stripe test mode
+Checkout uses whatever secret is on the Worker: `sk_test_…` until live secrets are put, then `sk_live_…`. Same lock either way: **7 days full ritual. Then $14 once.** Not a subscription.
+
+### Stripe test mode (local + current Worker)
 
 1. Copy `.env.example` → `.env.local`.
-2. Paste a **test** secret (`sk_test_…`) from [Stripe Dashboard → API keys](https://dashboard.stripe.com/test/apikeys). Never commit it. Never use `sk_live_`.
-3. `npm run stripe:setup` creates the $14 test product/price and a webhook to `https://ritestack.app/api/billing/webhook`.
-4. Cloudflare Worker secrets (same names): `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, optional `STRIPE_PRICE_ID`. Public: `NEXT_PUBLIC_APP_URL=https://ritestack.app`. When auth exists: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`.
+2. Put a **test** secret (`sk_test_…`) from [Stripe Dashboard → test API keys](https://dashboard.stripe.com/test/apikeys) into `.env.local`. Never commit it. Never paste `sk_live_` into chat.
+3. `npm run stripe:setup` creates the $14 **test** product/price and a webhook to `https://ritestack.app/api/billing/webhook`. That script refuses live keys.
+4. Cloudflare Worker secrets (same names): `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID`. Public var: `NEXT_PUBLIC_APP_URL=https://ritestack.app`. Also: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`. Optional: `FOUNDERS_PAID_EMAIL` (founder notify; leave unset until you have an inbox — do not invent one).
 5. Apply `supabase/migrations/20260918190000_profiles_trial.sql` in the RiteStack Supabase project (not Job Pursuit).
+
+### Live Checkout (after Dashboard activate)
+
+Do not put live keys in git or chat. After Stripe live is ready, replace the Worker secrets above with live values (`sk_live_…`, live `price_…`, live `whsec_…`) via `wrangler secret put`. Until those live secrets exist, hosted Checkout stays on test keys. `GET /api/billing/status` reports `stripeMode` as `test` or `live`.
+
+Customer receipt: Checkout sets `receipt_email` from the signed-in address. Also turn on Stripe Dashboard emails for successful payments. Founder ping: webhook `checkout.session.completed` mails `FOUNDERS_PAID_EMAIL` from `hello@ritestack.app` when that secret is set.
 
 ### Test cards
 
 | Card | Result |
 |---|---|
-| `4242 4242 4242 4242` | Success |
-| `4000 0000 0000 0002` | Decline |
+| `4242 4242 4242 4242` | Success (test mode only) |
+| `4000 0000 0000 0002` | Decline (test mode only) |
 | Any future expiry, any 3-digit CVC, any ZIP | |
 
-Checkout runs in Stripe test mode. No real charges.
+Live mode charges a real card. Test cards do not work against `sk_live_`.
 
 ### What is gated
 

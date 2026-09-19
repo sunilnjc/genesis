@@ -5,11 +5,13 @@ import { useAuth } from "@/lib/auth"
 import { billingAuthHeaders } from "@/lib/billing-auth"
 import { checkedCheckoutUrl } from "@/lib/checkout-url"
 import { entitlement, type Entitlement, type EntitlementState } from "@/lib/entitlement"
+import type { StripeMode } from "@/lib/stripe"
 
 export type BillingStatus = Entitlement & {
   userId: string | null
   checkoutConfigured: boolean
   supabaseConfigured: boolean
+  stripeMode: StripeMode | null
   message: string
 }
 
@@ -18,6 +20,7 @@ const LOCAL_UNLIMITED: BillingStatus = {
   userId: null,
   checkoutConfigured: false,
   supabaseConfigured: false,
+  stripeMode: null,
   message: "Local list — full ritual while this browser has no login.",
 }
 

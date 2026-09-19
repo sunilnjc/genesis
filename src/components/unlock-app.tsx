@@ -49,7 +49,7 @@ export function UnlockApp() {
           </p>
           <h1 className="font-heading text-xl font-medium tracking-tight">Unlock the pack</h1>
           <p className="text-xs text-muted-foreground">
-            ${PACK_AMOUNT_DOLLARS} once. Test Checkout works during the 7-day trial.
+            7 days full ritual. Then ${PACK_AMOUNT_DOLLARS} once.
           </p>
         </div>
         <AuthStatusChip />
@@ -94,7 +94,7 @@ export function UnlockApp() {
                   ? `Pay / Unlock · $${PACK_AMOUNT_DOLLARS}`
                   : status.checkoutConfigured
                     ? "Sign in to start Checkout"
-                    : "Stripe test key not set"}
+                    : "Stripe not configured"}
             </Button>
           )}
           {error ? (
@@ -108,7 +108,9 @@ export function UnlockApp() {
       </Card>
 
       <p className="text-[0.625rem] text-muted-foreground">
-        Stripe test mode only. Use card 4242 4242 4242 4242. Live keys and live cards are refused.
+        {status.stripeMode === "live"
+          ? "Live Checkout. This charges a real card for $14 once."
+          : "Stripe is still in test mode until live secrets are on the Worker. Test card 4242 4242 4242 4242."}
       </p>
       <Link href="/" className="text-xs text-muted-foreground underline-offset-4 hover:underline">
         Back to Decide
