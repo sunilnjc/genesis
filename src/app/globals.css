@@ -162,6 +162,6 @@
 /* Signed-in phone chrome: keep the site footer above Decide / Inventory tabs. */
 @media (max-width: 767px) {
   body:has([data-ritestack-chrome="app"]) [data-ritestack-footer="site"] {
-    padding-bottom: calc(3.75rem + env(safe-area-inset-bottom));
+    padding-bottom: calc(4.5rem + env(safe-area-inset-bottom));
   }
 }
