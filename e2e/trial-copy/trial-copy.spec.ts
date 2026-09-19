@@ -13,19 +13,17 @@ const here = dirname(fileURLToPath(import.meta.url))
 const FULL_RITUAL = /7 days full ritual/i
 const FOURTEEN_ONCE = /\$14 once/i
 const LOOKING_OR_INVENTORY_FREE =
-  /looking at (your )?stack stays free|inventory(?:\/looking)? stays free|looking stays free/i
-const UNLOCK_FOURTEEN = /unlock(?:[^.\n]{0,40})?\$14/i
-const SUBSCRIPTION = /\bsubscription\b/i
-const REMAINING_DAYS = /\b(?:[1-7] days? left|7 days)\b/i
+  /looking at (your )?stack stays free|inventory stays free|looking stays free/i
+const UNLOCK_FOURTEEN = /unlock(?:[^.\n]{0,60})?\$14/i
+const PRO_PLAN_OR_LIFETIME = /pro plan|lifetime everything|lifetime pass/i
+const DAYS_LEFT = /\b[1-7] days? left\b/i
 
 async function visibleBody(page: Page) {
   return page.locator("body").innerText()
 }
 
 function trialCopyLine(root: Locator | Page, surface: "unsigned" | "signed-in") {
-  const attr = root.locator(`[data-ritestack-trial-copy="${surface}"]`)
-  const text = root.getByText(FULL_RITUAL)
-  return attr.or(text).first()
+  return root.locator(`[data-ritestack-trial-copy="${surface}"]`).first()
 }
 
 async function waitUnsigned(page: Page, path: string) {
@@ -37,10 +35,33 @@ async function waitUnsigned(page: Page, path: string) {
 async function waitSignedIn(page: Page, path: string) {
   await page.goto(path, { waitUntil: "domcontentloaded" })
   await expect(page.getByRole("heading", { name: "Sign in to your stack" })).toHaveCount(0)
-  await expect(page.locator("[data-ritestack-user-id]")).toBeVisible()
+  await expect(page.locator("[data-ritestack-user-id]")).toHaveAttribute(
+    "data-ritestack-user-id",
+    /[0-9a-f-]{8,}/i
+  )
+  await expect(page.getByRole("button", { name: /sign out/i })).toBeVisible()
   await expect(page.getByText("Checking session…")).toHaveCount(0)
   await expect(page.getByText("Loading your list…")).toHaveCount(0)
   await expect(page.locator("[data-view]")).toBeVisible()
+}
+
+async function assertSiteChrome(page: Page) {
+  const footer = page.locator('[data-ritestack-footer="site"]')
+  await expect(footer).toBeVisible()
+  await expect(footer.getByText("© 2026 RiteStack")).toBeVisible()
+  await expect(footer.getByRole("link", { name: "About" })).toHaveAttribute("href", "/about")
+  await expect(footer.getByRole("link", { name: "Feedback" })).toHaveAttribute("href", "/feedback")
+  await expect(footer.getByRole("link", { name: "Brief" })).toHaveAttribute("href", "/brief")
+}
+
+async function assertLockedPackLine(line: Locator) {
+  await expect(line, "missing locked §7 trial copy").toBeVisible()
+  await expect(line).toContainText(FULL_RITUAL)
+  await expect(line).toContainText(FOURTEEN_ONCE)
+  await expect(line).toContainText(LOOKING_OR_INVENTORY_FREE)
+  const text = await line.innerText()
+  expect(text, "pack copy must not sell a subscription").not.toMatch(/\bsubscription\b/i)
+  expect(text).not.toMatch(PRO_PLAN_OR_LIFETIME)
 }
 
 test.describe("unsigned login", () => {
@@ -51,102 +72,154 @@ test.describe("unsigned login", () => {
       page,
     }) => {
       await waitUnsigned(page, path)
-
-      const login = page.locator('main[data-ritestack-signin="unsigned"]')
-      const line = trialCopyLine(login, "unsigned")
-      await expect(line, "unsigned login is missing 7 days full ritual").toBeVisible()
-      await expect(line).toContainText(FULL_RITUAL)
-      await expect(line).toContainText(FOURTEEN_ONCE)
-      await expect(line).toContainText(LOOKING_OR_INVENTORY_FREE)
-
-      const text = await line.innerText()
-      expect(text, "unsigned trial copy must not say subscription").not.toMatch(SUBSCRIPTION)
-      expect(text, "unsigned trial copy must not say pro plan").not.toMatch(/pro plan/i)
-
-      const body = await visibleBody(page)
-      expect(body).toMatch(FULL_RITUAL)
-      expect(body).toMatch(FOURTEEN_ONCE)
+      await assertLockedPackLine(trialCopyLine(page, "unsigned"))
+      await assertSiteChrome(page)
+      await expect(page.locator("[data-ritestack-trial-remaining]")).toHaveCount(0)
     })
   }
 })
 
-test.describe("signed-in trial", () => {
+test.describe("site chrome", () => {
+  test.use({ storageState: { cookies: [], origins: [] } })
+
+  test("/about carries the locked $14 once line", async ({ page }) => {
+    await page.goto("/about", { waitUntil: "domcontentloaded" })
+    await expect(page.locator('[data-ritestack-screen="about"]')).toBeVisible()
+    await expect(page.getByRole("heading", { name: "About" })).toBeVisible()
+    const pricing = page.locator('[data-ritestack-copy="pricing"]')
+    await expect(pricing).toContainText(FULL_RITUAL)
+    await expect(pricing).toContainText(FOURTEEN_ONCE)
+    await expect(pricing).toContainText(LOOKING_OR_INVENTORY_FREE)
+    await assertSiteChrome(page)
+  })
+
+  test("/brief is Brief, not a whitepaper, and states 7 days then $14 once", async ({ page }) => {
+    await page.goto("/brief", { waitUntil: "domcontentloaded" })
+    await expect(page.locator('[data-ritestack-screen="brief"]')).toBeVisible()
+    await expect(page.getByRole("heading", { name: "Brief" })).toBeVisible()
+    await expect(page.getByText(/whitepaper/i)).toHaveCount(0)
+    const body = await visibleBody(page)
+    expect(body).toMatch(FULL_RITUAL)
+    expect(body).toMatch(FOURTEEN_ONCE)
+    expect(body).toMatch(LOOKING_OR_INVENTORY_FREE)
+    await assertSiteChrome(page)
+  })
+
+  test("Feedback form can be submitted", async ({ page }) => {
+    await page.addInitScript(() => {
+      const desc = Object.getOwnPropertyDescriptor(Location.prototype, "href")
+      if (!desc?.set) return
+      Object.defineProperty(Location.prototype, "href", {
+        configurable: true,
+        get: desc.get,
+        set(value: string) {
+          if (String(value).startsWith("mailto:")) {
+            document.documentElement.setAttribute("data-ritestack-mailto", String(value))
+            return
+          }
+          desc.set?.call(this, value)
+        },
+      })
+    })
+    await page.goto("/feedback", { waitUntil: "domcontentloaded" })
+    await expect(page.locator('[data-ritestack-screen="feedback"]')).toBeVisible()
+    await expect(page.getByRole("heading", { name: "Feedback" })).toBeVisible()
+    await page.locator("#feedback-name").fill("Trial copy e2e")
+    await page.locator("#feedback-email").fill("e2e-feedback@example.invalid")
+    await page.locator("#feedback-message").fill("Does the feedback form actually submit?")
+    await page.getByRole("button", { name: "Send feedback" }).click()
+    await expect(page.locator('[data-ritestack-feedback="sent"]')).toBeVisible()
+    await expect(page.getByText(/^Sent\.$/)).toBeVisible()
+    await assertSiteChrome(page)
+  })
+})
+
+test.describe("empty signed-in trial", () => {
   test.use({ storageState: resolve(here, ".auth/trial.json") })
 
   for (const path of ["/", "/inventory"] as const) {
-    test(`${path} shows 7 days / remaining-days, $14 once, looking stays free`, async ({
-      page,
-    }) => {
+    test(`${path} shows remaining-days label, $14 once, looking stays free`, async ({ page }) => {
       await waitSignedIn(page, path)
 
       const line = trialCopyLine(page, "signed-in")
-      await expect(line, "signed-in trial is missing 7 days / $14 once copy").toBeVisible()
-      await expect(line).toContainText(FULL_RITUAL)
-      await expect(line).toContainText(FOURTEEN_ONCE)
-      await expect(line).toContainText(LOOKING_OR_INVENTORY_FREE)
-      await expect(line).toContainText(REMAINING_DAYS)
+      await assertLockedPackLine(line)
+      await expect(line).toContainText(DAYS_LEFT)
+      await expect(line).toHaveAttribute("data-ritestack-trial-days", /[1-7]/)
+      const remaining = page.locator("[data-ritestack-trial-remaining]").first()
+      await expect(remaining, "remaining-days label missing").toBeVisible()
+      await expect(remaining).toContainText(DAYS_LEFT)
 
-      const remaining = page.locator("[data-ritestack-trial-remaining]")
-      if ((await remaining.count()) > 0) {
-        await expect(remaining.first()).toBeVisible()
-        await expect(remaining.first()).toContainText(/\d+ days? left/i)
+      if (path === "/") {
+        await expect(page.getByText("Nothing to decide")).toBeVisible()
+      } else {
+        await expect(page.getByText("No tools on the list yet")).toBeVisible()
       }
-
-      const text = await line.innerText()
-      expect(text).not.toMatch(SUBSCRIPTION)
+      await expect(page.getByRole("button", { name: UNLOCK_FOURTEEN })).toHaveCount(0)
+      await assertSiteChrome(page)
     })
   }
 })
 
-test.describe("paid pack", () => {
+test.describe("empty signed-in paid", () => {
   test.use({ storageState: resolve(here, ".auth/paid.json") })
 
   for (const path of ["/", "/inventory"] as const) {
-    test(`${path} does not still say 7 days full ritual as if unpaid`, async ({ page }) => {
+    test(`${path} is empty paid, not still promising 7 days as if unpaid`, async ({ page }) => {
       await waitSignedIn(page, path)
-
-      await expect(page.getByRole("button", { name: /sign out/i })).toBeVisible()
       await expect(page.locator('[data-ritestack-signin="unsigned"]')).toHaveCount(0)
 
-      const unpaidLine = page.locator('[data-ritestack-trial-copy="signed-in"]')
-      if ((await unpaidLine.count()) > 0) {
-        await expect(unpaidLine.first()).not.toContainText(FULL_RITUAL)
+      if (path === "/") {
+        await expect(page.getByText("Nothing to decide")).toBeVisible()
+      } else {
+        await expect(page.getByText("No tools on the list yet")).toBeVisible()
       }
 
+      await expect(page.locator("[data-ritestack-trial-remaining]")).toHaveCount(0)
+      await expect(page.locator("[data-ritestack-trial-days]")).toHaveCount(0)
+      await expect(page.getByText(DAYS_LEFT)).toHaveCount(0)
+      await expect(page.getByRole("button", { name: UNLOCK_FOURTEEN })).toHaveCount(0)
+
       const body = await visibleBody(page)
-      expect(body, "paid UI still claims 7 days full ritual as if unpaid").not.toMatch(
+      expect(body, "paid empty list still claims 7 days full ritual as if unpaid").not.toMatch(
         FULL_RITUAL
       )
-      await expect(page.getByRole("button", { name: UNLOCK_FOURTEEN })).toHaveCount(0)
+      await assertSiteChrome(page)
     })
   }
 })
 
-test.describe("day-8 locked", () => {
+test.describe("day-8 locked copy", () => {
   test.use({ storageState: resolve(here, ".auth/locked.json") })
 
-  test("Decide shows Unlock $14, not a silent missing paywall", async ({ page }) => {
+  test("Decide lock copy reuses $14 once, stays free, Unlock $14 — not a silent paywall", async ({
+    page,
+  }) => {
     await waitSignedIn(page, "/")
 
     const unlock = page.getByRole("button", { name: UNLOCK_FOURTEEN })
-    const unlockText = page.getByText(UNLOCK_FOURTEEN)
-    await expect(
-      unlock.or(unlockText).first(),
-      "day-8 Decide is missing Unlock $14"
-    ).toBeVisible()
+    await expect(unlock, "day-8 Decide is missing Unlock $14").toBeVisible()
     await expect(page.getByText(/unlock keep \/ cut \/ pause/i).first()).toBeVisible()
-  })
-
-  test("Inventory is not a silent missing paywall", async ({ page }) => {
-    await waitSignedIn(page, "/inventory")
 
     const body = await visibleBody(page)
+    expect(body).toMatch(FOURTEEN_ONCE)
+    expect(body).toMatch(LOOKING_OR_INVENTORY_FREE)
+    expect(body).not.toMatch(PRO_PLAN_OR_LIFETIME)
+    expect(body).not.toMatch(/\bpro plan\b/i)
+    expect(body).not.toMatch(DAYS_LEFT)
+    await expect(page.locator("[data-ritestack-trial-remaining]")).toHaveCount(0)
+    await assertSiteChrome(page)
+  })
+
+  test("Inventory lock copy keeps looking free and is not silent", async ({ page }) => {
+    await waitSignedIn(page, "/inventory")
+
+    await expect(page.getByText(/ritual locked/i).first()).toBeVisible()
+    const body = await visibleBody(page)
     expect(body, "day-8 inventory must still mention $14").toMatch(/\$14/)
-    const unlock = page.getByRole("button", { name: UNLOCK_FOURTEEN })
-    const lockedBanner = page.getByText(/ritual locked|unlock keep \/ cut \/ pause/i)
-    await expect(
-      unlock.or(lockedBanner).or(page.getByText(UNLOCK_FOURTEEN)).first(),
-      "day-8 inventory hid the paywall"
-    ).toBeVisible()
+    expect(body).toMatch(/stays free|list stays free/i)
+    expect(body).not.toMatch(PRO_PLAN_OR_LIFETIME)
+    expect(body).not.toMatch(DAYS_LEFT)
+    await expect(page.getByText("No tools on the list yet")).toBeVisible()
+    await assertSiteChrome(page)
   })
 })
