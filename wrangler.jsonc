@@ -14,7 +14,14 @@
   },
   // Secrets (dashboard or `wrangler secret put`, never commit):
   // STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, STRIPE_PRICE_ID,
+  // FOUNDERS_PAID_EMAIL,
   // SUPABASE_SERVICE_ROLE_KEY, NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY
+  "send_email": [
+    {
+      "name": "EMAIL",
+      "allowed_sender_addresses": ["hello@ritestack.app"]
+    }
+  ],
   "vars": {
     "NEXT_PUBLIC_APP_URL": "https://ritestack.app"
   }

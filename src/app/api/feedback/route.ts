@@ -4,6 +4,7 @@ import {
   trimFeedback,
   validateFeedback,
 } from "@/app/feedback/feedback"
+import { sendRiteStackMail } from "@/lib/ritestack-mail"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -12,31 +13,12 @@ function json(body: unknown, status = 200) {
   return Response.json(body, { status })
 }
 
-type EmailSender = {
-  send: (message: {
-    to: string
-    from: { email: string; name: string }
-    subject: string
-    text: string
-  }) => Promise<void>
-}
-
 async function trySend(text: string): Promise<boolean> {
-  try {
-    const { getCloudflareContext } = await import("@opennextjs/cloudflare")
-    const { env } = await getCloudflareContext({ async: true })
-    const sender = (env as { EMAIL?: EmailSender }).EMAIL
-    if (!sender?.send) return false
-    await sender.send({
-      to: FEEDBACK_TO,
-      from: { email: FEEDBACK_TO, name: "RiteStack" },
-      subject: "RiteStack feedback",
-      text,
-    })
-    return true
-  } catch {
-    return false
-  }
+  return sendRiteStackMail({
+    to: FEEDBACK_TO,
+    subject: "RiteStack feedback",
+    text,
+  })
 }
 
 export async function POST(request: Request) {

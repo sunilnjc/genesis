@@ -14,9 +14,9 @@ import {
   checkoutSessionFields,
   paidCheckoutFromSession,
   readStripeConfig,
-  stripeConfigured,
   stripeRequest,
   type PaidCheckout,
+  type StripeMode,
 } from "@/lib/stripe"
 
 const LOCAL_USER_COOKIE = "ritestack_local_id"
@@ -26,6 +26,7 @@ export type BillingStatus = Entitlement & {
   userId: string | null
   checkoutConfigured: boolean
   supabaseConfigured: boolean
+  stripeMode: StripeMode | null
   message: string
 }
 
@@ -80,7 +81,13 @@ export async function billingStatus(request: Request): Promise<{
 }> {
   const setCookies: string[] = []
   const supabase = readSupabaseConfig()
-  const checkoutConfigured = stripeConfigured()
+  let stripeMode: StripeMode | null = null
+  try {
+    stripeMode = readStripeConfig().stripeMode
+  } catch {
+    stripeMode = null
+  }
+  const checkoutConfigured = stripeMode !== null
   const user = await currentUser(request)
   let profile: ProfileRow | null = null
 
@@ -117,6 +124,7 @@ export async function billingStatus(request: Request): Promise<{
       userId: user?.id ?? (supabase ? null : localId),
       checkoutConfigured,
       supabaseConfigured: Boolean(supabase),
+      stripeMode,
       message: statusMessage(row),
     },
     setCookies,

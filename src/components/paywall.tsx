@@ -49,12 +49,13 @@ export function PaywallCard({
             ? "Opening Stripe…"
             : status.checkoutEnabled
               ? `Unlock RiteStack pack · $${PACK_AMOUNT_DOLLARS}`
-              : "Stripe test key not set"}
+              : "Stripe not configured"}
         </Button>
         {!status.checkoutEnabled ? (
           <p className="text-[0.625rem] text-muted-foreground">
-            Set <code>STRIPE_SECRET_KEY</code> (sk_test_) in <code>.env.local</code> or the
-            Cloudflare Worker secrets, then restart.
+            Set <code>STRIPE_SECRET_KEY</code> (<code>sk_test_</code> or <code>sk_live_</code>) in{" "}
+            <code>.env.local</code> or the Cloudflare Worker secrets, then restart. Do not paste
+            keys into chat.
           </p>
         ) : null}
       </CardContent>

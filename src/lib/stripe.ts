@@ -15,25 +15,37 @@ export class StripeConfigError extends Error {
   }
 }
 
+export type StripeMode = "test" | "live"
+
 export type StripeConfig = {
   secretKey: string
   webhookSecret: string | null
   priceId: string | null
   appUrl: string
+  liveMode: boolean
+  stripeMode: StripeMode
+}
+
+export function stripeModeFromSecretKey(secretKey: string): StripeMode | null {
+  if (secretKey.startsWith("sk_live_")) return "live"
+  if (secretKey.startsWith("sk_test_")) return "test"
+  return null
 }
 
 export function readStripeConfig(env: NodeJS.Dict<string> = process.env): StripeConfig {
   const secretKey = (env.STRIPE_SECRET_KEY ?? "").trim()
   if (!secretKey) {
     throw new StripeConfigError(
-      "STRIPE_SECRET_KEY is not set. Use a Stripe test-mode secret (sk_test_…) in .env.local or Cloudflare Worker secrets."
+      "STRIPE_SECRET_KEY is not set. Use sk_test_… locally, or sk_live_… on the Worker after Stripe live is ready. Do not paste keys into chat."
     )
   }
-  if (!secretKey.startsWith("sk_test_")) {
+  const stripeMode = stripeModeFromSecretKey(secretKey)
+  if (!stripeMode) {
     throw new StripeConfigError(
-      "RiteStack checkout is test-mode only this weekend. Refusing a non-sk_test_ key."
+      "STRIPE_SECRET_KEY must be a Stripe secret (sk_test_… or sk_live_…)."
     )
   }
+  const liveMode = stripeMode === "live"
 
   const appUrl = (env.NEXT_PUBLIC_APP_URL ?? env.APP_URL ?? "").trim().replace(/\/$/, "")
   if (!appUrl) {
@@ -50,7 +62,7 @@ export function readStripeConfig(env: NodeJS.Dict<string> = process.env): Stripe
     throw new StripeConfigError("STRIPE_PRICE_ID must be a Stripe price id (price_…) for the $14 pack.")
   }
 
-  return { secretKey, webhookSecret, priceId, appUrl }
+  return { secretKey, webhookSecret, priceId, appUrl, liveMode, stripeMode }
 }
 
 export function stripeConfigured(env: NodeJS.Dict<string> = process.env): boolean {
@@ -96,6 +108,7 @@ export function checkoutSessionFields(input: {
 
   if (input.email) {
     fields.customer_email = input.email
+    fields["payment_intent_data[receipt_email]"] = input.email
   }
 
   return fields

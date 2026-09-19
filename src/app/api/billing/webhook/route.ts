@@ -1,4 +1,5 @@
 import { applyPaidCheckout } from "@/lib/billing-server"
+import { notifyFoundersPaid } from "@/lib/founders-paid"
 import { paidCheckoutFromSession, readStripeConfig, verifyStripeWebhook } from "@/lib/stripe"
 
 export const runtime = "nodejs"
@@ -37,6 +38,11 @@ export async function POST(request: Request) {
     const paid = paidCheckoutFromSession(event.data?.object)
     if (paid) {
       await applyPaidCheckout(paid)
+      try {
+        await notifyFoundersPaid(paid, config.stripeMode)
+      } catch {
+        // Pack grant already persisted. Founder mail is best-effort.
+      }
     }
   }
 
