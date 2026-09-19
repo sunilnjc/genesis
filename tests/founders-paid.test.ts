@@ -25,10 +25,10 @@ test("FOUNDERS_PAID_EMAIL is used as-is when it looks like an inbox", () => {
   )
 })
 
-test("founder paid mail is $14 once and names live vs test", () => {
-  const live = foundersPaidNotify({ paid, stripeMode: "live" })
-  assert.equal(live.subject, "RiteStack pack paid · $14 live")
-  assert.match(live.text, /Mode: live/)
+test("founder paid mail is $14 once and names Paddle vs Stripe test", () => {
+  const live = foundersPaidNotify({ paid, mode: "paddle-live" })
+  assert.equal(live.subject, "RiteStack pack paid · $14 paddle live")
+  assert.match(live.text, /Mode: paddle live/)
   assert.match(live.text, /Amount: \$14 once/)
   assert.match(live.text, /Customer: buyer@example\.invalid/)
   assert.match(live.text, /cs_test_paid_fixture/)
@@ -37,8 +37,8 @@ test("founder paid mail is $14 once and names live vs test", () => {
 
   const testMode = foundersPaidNotify({
     paid: { ...paid, email: null },
-    stripeMode: "test",
+    mode: "stripe-test",
   })
-  assert.equal(testMode.subject, "RiteStack pack paid · $14 test")
+  assert.equal(testMode.subject, "RiteStack pack paid · $14 stripe test")
   assert.match(testMode.text, /no customer email/i)
 })

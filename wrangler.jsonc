@@ -13,7 +13,9 @@
     "enabled": true
   },
   // Secrets (dashboard or `wrangler secret put`, never commit):
-  // STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, STRIPE_PRICE_ID,
+  // PADDLE_API_KEY, PADDLE_WEBHOOK_SECRET, PADDLE_PRICE_ID, PADDLE_ENV,
+  // STRIPE_SECRET_KEY (sk_test_ only; live $14 is Paddle),
+  // STRIPE_WEBHOOK_SECRET, STRIPE_PRICE_ID,
   // FOUNDERS_PAID_EMAIL,
   // SUPABASE_SERVICE_ROLE_KEY, NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY
   "send_email": [

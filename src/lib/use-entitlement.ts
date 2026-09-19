@@ -1,17 +1,21 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useAuth } from "@/lib/auth"
 import { billingAuthHeaders } from "@/lib/billing-auth"
-import { checkedCheckoutUrl } from "@/lib/checkout-url"
+import { checkedProviderCheckoutUrl } from "@/lib/checkout-url"
 import { entitlement, type Entitlement, type EntitlementState } from "@/lib/entitlement"
+import { paddleSuccessUrl, type CheckoutProvider, type PaddleEnv, type PaddleOverlay } from "@/lib/paddle"
+import { openPaddleOverlay } from "@/lib/paddle-overlay"
 import type { StripeMode } from "@/lib/stripe"
 
 export type BillingStatus = Entitlement & {
   userId: string | null
   checkoutConfigured: boolean
+  checkoutProvider: CheckoutProvider | null
   supabaseConfigured: boolean
   stripeMode: StripeMode | null
+  paddleEnv: PaddleEnv | null
   message: string
 }
 
@@ -19,8 +23,10 @@ const LOCAL_UNLIMITED: BillingStatus = {
   ...entitlement({ hasSession: false, trialEndsAt: null, packPaidAt: null, checkoutEnabled: false }),
   userId: null,
   checkoutConfigured: false,
+  checkoutProvider: null,
   supabaseConfigured: false,
   stripeMode: null,
+  paddleEnv: null,
   message: "Local list — full ritual while this browser has no login.",
 }
 
@@ -39,6 +45,11 @@ function readSessionId(): string | null {
   return value && value.startsWith("cs_") ? value : null
 }
 
+function awaitingWebhookGrant(): boolean {
+  if (typeof window === "undefined") return false
+  return new URLSearchParams(window.location.search).get("checkout") === "success"
+}
+
 export function useEntitlement() {
   const auth = useAuth()
   const accessToken = auth.session?.access_token ?? null
@@ -47,6 +58,7 @@ export function useEntitlement() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [checkoutBusy, setCheckoutBusy] = useState(false)
+  const pollCount = useRef(0)
 
   const refresh = useCallback(async () => {
     if (!authReady) return
@@ -78,6 +90,16 @@ export function useEntitlement() {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch on auth ready
     void refresh()
   }, [authReady, refresh])
+
+  useEffect(() => {
+    if (!awaitingWebhookGrant() || status.state === "paid") return
+    if (pollCount.current >= 12) return
+    const timer = window.setTimeout(() => {
+      pollCount.current += 1
+      void refresh()
+    }, 2500)
+    return () => window.clearTimeout(timer)
+  }, [refresh, status.state])
 
   const display = useMemo((): BillingStatus => {
     const preview = previewOverride()
@@ -121,14 +143,30 @@ export function useEntitlement() {
           },
           body: returnTo ? JSON.stringify({ returnTo }) : undefined,
         })
-        const body = (await response.json()) as { url?: unknown; error?: string }
-        if (!response.ok) {
-          throw new Error(body.error || "Could not start Stripe Checkout.")
+        const body = (await response.json()) as {
+          url?: unknown
+          provider?: CheckoutProvider
+          overlay?: PaddleOverlay | null
+          error?: string
         }
-        window.location.assign(checkedCheckoutUrl(body.url))
+        if (!response.ok) {
+          throw new Error(body.error || "Could not start Checkout.")
+        }
+        const provider = body.provider === "paddle" ? "paddle" : "stripe"
+        if (provider === "paddle" && body.overlay?.transactionId && body.overlay.clientToken) {
+          const origin = window.location.origin
+          await openPaddleOverlay(body.overlay, {
+            successUrl: paddleSuccessUrl(origin, returnTo ?? "/"),
+            onClosed: () => setCheckoutBusy(false),
+          })
+          return
+        }
+        window.location.assign(
+          checkedProviderCheckoutUrl(body.url, provider, window.location.origin)
+        )
       } catch (cause) {
         setCheckoutBusy(false)
-        setError(cause instanceof Error ? cause.message : "Could not start Stripe Checkout.")
+        setError(cause instanceof Error ? cause.message : "Could not start Checkout.")
       }
     },
     [accessToken]

@@ -73,7 +73,7 @@ test("jwtFromRequest falls back to the hosted cookie session", () => {
   assert.equal(jwtFromRequest(request), ACCESS)
 })
 
-test("unsigned traffic still has no jwt", () => {
-  const request = new Request("https://ritestack.app/api/billing/status")
+test("unsigned traffic still has no jwt; hosted checkout would 400", () => {
+  const request = new Request("https://ritestack.app/api/billing/checkout")
   assert.equal(jwtFromRequest(request), "")
 })

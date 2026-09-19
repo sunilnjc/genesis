@@ -5,6 +5,7 @@ import {
   checkoutReturnPathFromRequest,
   checkoutReturnUrls,
 } from "../src/lib/checkout-return.ts"
+import { checkoutSignInError, CHECKOUT_SIGN_IN_ERROR } from "../src/lib/checkout-access.ts"
 import { canStartPackCheckout } from "../src/lib/entitlement.ts"
 
 test("only / and /unlock are valid Checkout return paths", () => {
@@ -41,6 +42,14 @@ test("checkout POST body returnTo=/unlock is accepted; other values fall back", 
     body: JSON.stringify({ returnTo: "https://evil.example" }),
   })
   assert.equal(await checkoutReturnPathFromRequest(sneaky), "/")
+})
+
+test("unsigned checkout is 400 Sign in to buy the RiteStack pack", () => {
+  assert.equal(
+    checkoutSignInError({ supabaseConfigured: true, hasUser: false }),
+    CHECKOUT_SIGN_IN_ERROR
+  )
+  assert.equal(CHECKOUT_SIGN_IN_ERROR, "Sign in to buy the RiteStack pack.")
 })
 
 test("trial users can start $14 Checkout; paid users cannot", () => {

@@ -14,8 +14,10 @@ export const trialStatus = {
   checkoutEnabled: true,
   userId: "e2e-trial-user",
   checkoutConfigured: true,
+  checkoutProvider: "stripe" as const,
   supabaseConfigured: true,
   stripeMode: "test" as const,
+  paddleEnv: null,
   message: "Trial · 7 days left. Keep / cut / pause stays unlocked.",
 }
 
@@ -29,8 +31,10 @@ export const paidStatus = {
   checkoutEnabled: false,
   userId: "e2e-paid-user",
   checkoutConfigured: true,
+  checkoutProvider: "stripe" as const,
   supabaseConfigured: true,
   stripeMode: "test" as const,
+  paddleEnv: null,
   message: "RiteStack pack is unlocked. Ritual, cancel URLs, and pause reminders are included.",
 }
 
@@ -44,8 +48,10 @@ export const day8PaywallStatus = {
   checkoutEnabled: true,
   userId: "e2e-paywall-user",
   checkoutConfigured: true,
+  checkoutProvider: "stripe" as const,
   supabaseConfigured: true,
   stripeMode: "test" as const,
+  paddleEnv: null,
   message:
     "Trial ended. Your list stays free. Unlock keep / cut / pause, cancel URLs, and reminders for $14 once.",
 }
