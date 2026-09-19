@@ -52,6 +52,9 @@ async function assertSiteChrome(page: Page) {
   await expect(footer.getByRole("link", { name: "About" })).toHaveAttribute("href", "/about")
   await expect(footer.getByRole("link", { name: "Feedback" })).toHaveAttribute("href", "/feedback")
   await expect(footer.getByRole("link", { name: "Brief" })).toHaveAttribute("href", "/brief")
+  await expect(footer.getByRole("link", { name: "Terms" })).toHaveAttribute("href", "/terms")
+  await expect(footer.getByRole("link", { name: "Privacy" })).toHaveAttribute("href", "/privacy")
+  await expect(footer.getByRole("link", { name: "Refund" })).toHaveAttribute("href", "/refund")
 }
 
 async function assertLockedPackLine(line: Locator) {
