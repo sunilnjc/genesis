@@ -4,7 +4,7 @@
 
 - PR #29: `/cuts`, free receipts using existing subscriptions and RLS; no migration. All hosted receipt checks passed.
 - PR #30: public unsigned homepage with product explanation, unchanged pricing, contact, and legal links. Signed-in home stays Decide. Verified over HTTPS and with JavaScript disabled.
-- Next slice: 14-day Decide view, default on. Date-only renewal today through day 14 inclusive, plus paused rows whose existing `remind_at` is in that window. Cuts excluded; switching the chip off restores the original Decide queue. Inventory remains complete.
+- PR #31: 14-day Decide view, default on. Date-only renewal today through day 14 inclusive, plus paused rows whose existing `remind_at` is in that window. Cuts excluded; switching the chip off restores the original Decide queue. Inventory remains complete.
 
 ## Paddle Live
 
@@ -17,7 +17,9 @@ Account: RiteStack, seller 427385, Live dashboard `https://vendors.paddle.com`.
 - Webhook: `ntfset_01m32cpp07qvnc211tt0ps3075`, Active, Platform API v1, `transaction.completed` and `transaction.paid`, `https://ritestack.app/api/billing/paddle-webhook`.
 - API key `RiteStack Live checkout`: Active; Transactions read/write and Client-side tokens read. Founder confirmed private storage. Expires 20 December 2026. No secret values recorded here.
 - Live default payment link save has not yet been confirmed as persistent. Recheck `https://ritestack.app/unlock` after website approval.
-- Still needed: approved verification/domain, Live client token, privately entered webhook secret/API key in Wrangler, payout setup if requested by Paddle, final Live checkout verification.
+- Live client token `RiteStack Live checkout`: Active, `ctkn_01m32cxq1rqhpwjcdc205c63rz`. No token value recorded here.
+- Payout setup: not yet saved; founder was handed the form for personal and payout details.
+- Still needed: approved verification/domain, privately entered webhook secret/API key in Wrangler, saved payout setup, final Live checkout verification.
 
 Production remains **Paddle sandbox**. No Worker billing secrets changed. Do not flip until all Live prerequisites pass. No fake paid grants. The app obtains the client token from the selected Paddle environment through its server API key; no hardcoded token change is required.
 
