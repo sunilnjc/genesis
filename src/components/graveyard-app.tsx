@@ -5,6 +5,7 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { Alert02Icon, Add01Icon, InboxIcon, Link01Icon, MoreHorizontalIcon, PauseIcon, PlayIcon, ScissorIcon, Tick02Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
+import { CutsSection } from "@/components/cuts-section"
 import { SubscriptionForm, parseCost } from "@/components/subscription-form"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
@@ -84,7 +85,7 @@ export function GraveyardApp({
   headerAccessory?: ReactNode
 }) {
   const today = todayISO()
-  const { current, replace, reset, loading, canMutate } = useGraveyardStore()
+  const { current, replace, loading, canMutate } = useGraveyardStore()
   const {
     status: access,
     error: billingError,
@@ -226,11 +227,6 @@ export function GraveyardApp({
     void withSave((current) => current.filter((row) => !row.isSample))
   }
 
-  function resetStorage() {
-    void reset()
-    setActionError(null)
-  }
-
   function openAdd() {
     if (!canMutate) return
     setEditing(null)
@@ -266,7 +262,7 @@ export function GraveyardApp({
           <AlertTitle>Couldn’t load the list</AlertTitle>
           <AlertDescription>{loadError}</AlertDescription>
         </Alert>
-        <Button onClick={resetStorage}>Start a fresh list</Button>
+        <Button onClick={() => window.location.reload()}>Try again</Button>
       </main>
     )
   }
@@ -292,6 +288,11 @@ export function GraveyardApp({
             <p className="text-xs text-muted-foreground">Monthly burn · still paying</p>
             <TrialBanner status={access} />
           </>
+        ) : view === "cuts" ? (
+          <>
+            <p className="font-heading text-xl font-medium tracking-tight">Cuts</p>
+            <p className="text-xs text-muted-foreground">The tools you chose to stop paying for.</p>
+          </>
         ) : (
           <>
             <p className="font-heading text-xl font-medium tracking-tight">Decide</p>
@@ -315,18 +316,20 @@ export function GraveyardApp({
                 RiteStack
               </p>
               <h1 className="font-heading text-lg font-medium tracking-tight sm:text-xl">
-                {view === "decide" ? "Decide" : "Inventory"}
+                {view === "decide" ? "Decide" : view === "cuts" ? "Cuts" : "Inventory"}
               </h1>
               <TrialBanner status={access} />
               <p className="max-w-2xl text-xs/relaxed text-muted-foreground">
                 {view === "decide"
                   ? "Keep, cut, or pause — one sitting. The full list lives in Inventory."
-                  : "The list you pay for. Add, edit, and see monthly burn. Ritual is Decide."}
+                  : view === "cuts"
+                    ? "The tools you chose to stop paying for. Your receipts stay free to view."
+                    : "The list you pay for. Add, edit, and see monthly burn. Ritual is Decide."}
               </p>
             </div>
             <div className="flex flex-col items-stretch gap-2 sm:items-end">
               {headerAccessory}
-              {hydrated && canMutate ? (
+              {hydrated && canMutate && view !== "cuts" ? (
                 <div className="flex flex-wrap gap-2">
                   {view === "inventory" && subscriptions.length > 0 ? (
                     <Button variant="outline" onClick={loadSample}>
@@ -381,6 +384,8 @@ export function GraveyardApp({
             <div className="h-24 animate-pulse rounded-lg bg-muted" />
             <p className="text-xs text-muted-foreground">Loading your list…</p>
           </div>
+        ) : view === "cuts" ? (
+          <CutsSection rows={subscriptions} />
         ) : view === "decide" ? (
           subscriptions.length === 0 ? (
             <Empty className="border border-dashed py-16">
@@ -498,7 +503,7 @@ function ViewTabs({
 }) {
   return (
     <div
-      className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1"
+      className="grid grid-cols-3 gap-1 rounded-lg bg-muted p-1"
       role="tablist"
       aria-label="Switch RiteStack views"
     >
@@ -529,6 +534,20 @@ function ViewTabs({
         )}
       >
         Inventory
+      </Link>
+      <Link
+        href={pathForView("cuts")}
+        role="tab"
+        aria-selected={view === "cuts"}
+        aria-current={view === "cuts" ? "page" : undefined}
+        className={cn(
+          "flex h-9 items-center justify-center rounded-md text-sm font-medium transition-colors",
+          view === "cuts"
+            ? "bg-background text-foreground shadow-sm"
+            : "text-muted-foreground"
+        )}
+      >
+        Cuts
       </Link>
     </div>
   )

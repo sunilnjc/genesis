@@ -3,6 +3,9 @@
 export const SITE_FOOTER_COPYRIGHT = "© 2026 RiteStack"
 
 export const SITE_FOOTER_LINKS = [
+  { href: "/", label: "Decide" },
+  { href: "/inventory", label: "Inventory" },
+  { href: "/cuts", label: "Cuts" },
   { href: "/about", label: "About" },
   { href: "/feedback", label: "Feedback" },
   { href: "/brief", label: "Brief" },
