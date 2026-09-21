@@ -1,13 +1,14 @@
-export type AppView = "decide" | "inventory"
+export type AppView = "decide" | "inventory" | "cuts"
 
 export function viewFromPathname(pathname: string): AppView {
+  if (pathname === "/cuts" || pathname.startsWith("/cuts/")) return "cuts"
   return pathname === "/inventory" || pathname.startsWith("/inventory/")
     ? "inventory"
     : "decide"
 }
 
 export function pathForView(view: AppView): string {
-  return view === "inventory" ? "/inventory" : "/"
+  return view === "decide" ? "/" : `/${view}`
 }
 
 /** Old hash URLs from the first split attempt. */

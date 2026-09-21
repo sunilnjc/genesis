@@ -11,6 +11,9 @@ test("site footer is copyright plus quiet product and legal links", () => {
   assert.deepEqual(
     SITE_FOOTER_LINKS.map((link) => [link.href, link.label]),
     [
+      ["/", "Decide"],
+      ["/inventory", "Inventory"],
+      ["/cuts", "Cuts"],
       ["/about", "About"],
       ["/feedback", "Feedback"],
       ["/brief", "Brief"],
@@ -26,6 +29,6 @@ test("site footer copy stays short and does not say subscription", () => {
   assert.doesNotMatch(blob, /subscription/i)
   assert.doesNotMatch(blob, /graveyard/i)
   assert.doesNotMatch(blob, /Plaid/)
-  assert.ok(blob.split("\n").length <= 8)
+  assert.ok(blob.split("\n").length <= 11)
   assert.ok(blob.length < 120)
 })
