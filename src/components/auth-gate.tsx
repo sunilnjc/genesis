@@ -9,7 +9,9 @@ import { KeepCutPauseStreamer } from "@/components/keep-cut-pause-streamer"
 import { TrialCopyLine } from "@/components/trial-copy"
 import { SIGNIN_BRAND, SIGNIN_CONTEXT, SIGNIN_HEADLINE } from "@/lib/signin-copy"
 
-export function LoginScreen() {
+export function LoginScreen({ embedded = false }: { embedded?: boolean }) {
+  const Container = embedded ? "section" : "main"
+  const Heading = embedded ? "h2" : "h1"
   const auth = useAuth()
   const [email, setEmail] = useState("")
   const [sentTo, setSentTo] = useState<string | null>(null)
@@ -31,16 +33,17 @@ export function LoginScreen() {
   }
 
   return (
-    <main
+    <Container
+      id={embedded ? "sign-in" : undefined}
       data-ritestack-signin="unsigned"
       data-ritestack-screen="login"
-      className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-6 px-4 py-10"
+      className={embedded ? "flex flex-col gap-6 rounded-xl border border-foreground/10 bg-card p-6" : "mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-6 px-4 py-10"}
     >
       <div className="space-y-3">
         <p className="text-[0.625rem] font-medium tracking-[0.14em] text-muted-foreground uppercase">
           {SIGNIN_BRAND}
         </p>
-        <h1 className="font-heading text-2xl font-medium tracking-tight">{SIGNIN_HEADLINE}</h1>
+        <Heading className="font-heading text-2xl font-medium tracking-tight">{SIGNIN_HEADLINE}</Heading>
         <div className="space-y-2">
           <KeepCutPauseStreamer />
           <p className="text-sm text-muted-foreground">{SIGNIN_CONTEXT}</p>
@@ -71,7 +74,7 @@ export function LoginScreen() {
           {pending ? "Sending link…" : "Email me a sign-in link"}
         </Button>
       </form>
-    </main>
+    </Container>
   )
 }
 
