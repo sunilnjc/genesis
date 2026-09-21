@@ -1,16 +1,17 @@
 "use client"
 
 import { AuthStatusChip, LoginScreen } from "@/components/auth-gate"
+import { PublicProduct } from "@/components/public-product"
 import { GraveyardApp } from "@/components/graveyard-app"
 import { useAuth } from "@/lib/auth"
 
-export function HostedApp() {
+export function HostedApp({ publicHome = false }: { publicHome?: boolean }) {
   const auth = useAuth()
 
   // Hosted unsigned: show the compact login + streamer immediately (including SSR).
   // Do not paint the app skeleton or an empty/seeded list.
   if (auth.configured && !auth.isLocalhost && auth.status !== "signed-in") {
-    return <LoginScreen />
+    return publicHome ? <PublicProduct><LoginScreen embedded /></PublicProduct> : <LoginScreen />
   }
 
   if (auth.status === "loading") {

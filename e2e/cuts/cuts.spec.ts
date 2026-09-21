@@ -35,7 +35,7 @@ for (const state of ["trial", "paywall", "paid"] as const) {
   test(`${state}: receipts and cancel link are free`, async ({ page, context, baseURL }) => {
     await signIn(context, baseURL!, pair.sessionA)
     await billing(page, state)
-    await page.goto("/cuts")
+    await page.goto("/cuts", { waitUntil: "domcontentloaded" })
     const cuts = page.locator('[data-list="cuts"]')
     await expect(cuts.getByText(name, { exact: true })).toBeVisible()
     await expect(cuts.getByText("$200/mo", { exact: true })).toBeVisible()
@@ -54,7 +54,7 @@ for (const state of ["trial", "paywall", "paid"] as const) {
 
 test("other account sees an empty receipt and cannot query another user’s cuts", async ({ page, context, baseURL }) => {
   await signIn(context, baseURL!, pair.sessionB)
-  await page.goto("/cuts")
+  await page.goto("/cuts", { waitUntil: "domcontentloaded" })
   await expect(page.getByText("Nothing cut yet.", { exact: true })).toBeVisible()
   await expect(page.getByText(name, { exact: true })).toHaveCount(0)
   const { data, error } = await pair.clientB.from("subscriptions").select("*").eq("decision", "cut").eq("user_id", pair.userA.id)
@@ -67,7 +67,7 @@ test("cutting on Decide persists the date and opens the receipt", async ({ page,
   await billing(page, "trial")
   const { error } = await pair.clientA.from("subscriptions").update({ decision: "undecided", cut_at: null, cancel_url: "" }).eq("id", pair.secretRow.id)
   if (error) throw error
-  await page.goto("/")
+  await page.goto("/", { waitUntil: "domcontentloaded" })
   const row = page.getByRole("row").filter({ hasText: name })
   await row.getByRole("button", { name: "Cut", exact: true }).click()
   await expect(row).toHaveCount(0)
@@ -98,7 +98,7 @@ test("loading and read errors never show empty or destructive reset", async ({ p
 test("hosted unsigned Cuts and Inventory share the login wall", async ({ page, baseURL }) => {
   test.skip(new URL(baseURL!).hostname === "127.0.0.1", "Localhost deliberately has founder mode; run again on hosted deployment")
   for (const path of ["/cuts", "/inventory"]) {
-    const response = await page.goto(path)
+    const response = await page.goto(path, { waitUntil: "domcontentloaded" })
     expect(response?.status()).toBe(200)
     await expect(page.getByRole("heading", { name: "Sign in to your stack" })).toBeVisible()
     await expect(page.getByText(name, { exact: true })).toHaveCount(0)
