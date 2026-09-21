@@ -151,7 +151,7 @@ test("hosted unsigned Cuts and Inventory share the login wall", async ({ page, b
   }
 })
 
-test("hosted sandbox checkout still opens Paddle overlay without a client-side paid grant", async ({ request, baseURL }) => {
+test("hosted sandbox checkout returns overlay configuration without a client-side paid grant", async ({ request, baseURL }) => {
   test.skip(new URL(baseURL!).hostname !== "ritestack.app", "Production sandbox keep-alive")
   const headers = { Authorization: `Bearer ${pair.sessionB.access_token}` }
   const before = await request.get("/api/billing/status", { headers })
@@ -160,7 +160,10 @@ test("hosted sandbox checkout still opens Paddle overlay without a client-side p
   test.skip(status.paddleEnv !== "sandbox", "Never initiate a Live test transaction automatically")
   expect(status.checkoutProvider).toBe("paddle")
   expect(status.stripeMode).toBeNull()
-  const response = await request.post("/api/billing/checkout", { headers, data: { returnTo: "/unlock" } })
+  const response = await request.post("/api/billing/checkout", { headers, data: { returnTo: "/unlock" } }).catch(() => {
+    // Playwright transport errors include request headers; keep the test JWT out of reports.
+    throw new Error("Sandbox checkout transport failed before a response was received.")
+  })
   expect(response.ok()).toBeTruthy()
   const checkout = await response.json()
   expect(checkout.provider).toBe("paddle")
