@@ -11,7 +11,7 @@
 Account: RiteStack, seller 427385, Live dashboard `https://vendors.paddle.com`.
 
 - Account verification: **In progress**; dashboard says its team is reviewing the details, nothing further required now.
-- Website: **Pending**. Resubmitted `ritestack.app` after PR #30 removed the public homepage login barrier. Prior email cited unavailable site/SSL/login restrictions. HTTPS verified successfully and the public offer is now readable without a session or JavaScript.
+- Website: **Action required again on a fresh visit** after initially showing Pending. Founder asked for any new review email before another submission. Resubmitted `ritestack.app` after PR #30 removed the public homepage login barrier. Prior email cited unavailable site/SSL/login restrictions. HTTPS verified successfully and the public offer is now readable without a session or JavaScript.
 - Product: `pro_01m32bw1m2f1ysxny4fj53kfcp`, RiteStack ritual, Active, Standard digital goods.
 - Price: `pri_01m32bxrja7e8ve7p754njp4g7`, $14 USD one-time, `one-time-14`, quantity 1, Active.
 - Webhook: `ntfset_01m32cpp07qvnc211tt0ps3075`, Active, Platform API v1, `transaction.completed` and `transaction.paid`, `https://ritestack.app/api/billing/paddle-webhook`.
@@ -39,4 +39,4 @@ Validation: full lint has 7 existing errors in unrelated auth/form/animation fil
 - Sandbox checkout creation returned a Paddle sandbox overlay configuration. A client success query did not grant payment access. No real payment was attempted and no new signed-payment webhook grant was tested in this session.
 - Hosted unsigned home, mobile layout, JavaScript-disabled product/pricing, Cuts, real cut persistence, cross-account isolation, trial/paid/paywall receipt display, 14-day boundaries/toggle, paused reminders, complete Inventory, and loading/read errors verified.
 - HTTPS: HTTP 200, certificate verification successful. Unsigned Paddle webhook: HTTP 400, invalid signature. Deploy workflow still disabled.
-- Account verification and domain review remain pending; do not switch Worker secrets to Live yet.
+- Account verification is in progress; domain has returned to Action required. Do not switch Worker secrets to Live. Await the latest domain-review instructions before resubmitting.
