@@ -1,4 +1,4 @@
-import { daysBetween } from "./dates.ts"
+import { addDays, daysBetween } from "./dates.ts"
 import type { QueueReason, Subscription } from "./types.ts"
 
 export const RENEW_SOON_DAYS = 14
@@ -73,6 +73,21 @@ export function decideByQueue(
       const bRenew = daysBetween(today, b.renewDate)
       return aRenew - bRenew
     })
+}
+
+/** Date-only window, inclusive of today and day 14. Pause uses its existing remindAt. */
+export function renewalWall(subscriptions: Subscription[], today: string): Subscription[] {
+  const end = addDays(today, RENEW_SOON_DAYS)
+  const inWindow = (date: string | null) => Boolean(date && date >= today && date <= end)
+  const nextDate = (row: Subscription) => {
+    const renewal = inWindow(row.renewDate) ? row.renewDate : end
+    return row.decision === "pause" && inWindow(row.remindAt)
+      ? (row.remindAt! < renewal ? row.remindAt! : renewal)
+      : renewal
+  }
+  return subscriptions.filter(row => row.decision !== "cut" && (
+    inWindow(row.renewDate) || (row.decision === "pause" && inWindow(row.remindAt))
+  )).sort((a, b) => nextDate(a).localeCompare(nextDate(b)) || a.name.localeCompare(b.name))
 }
 
 export function reasonLabel(reason: QueueReason): string {

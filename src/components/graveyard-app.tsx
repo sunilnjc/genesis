@@ -38,6 +38,7 @@ import { addDays, formatDate, formatMoney, formatRelativeDay, todayISO } from "@
 import {
   cutThisPass,
   decideByQueue,
+  renewalWall,
   monthlyBurn,
   newId,
   PAUSE_REMIND_DAYS,
@@ -95,6 +96,7 @@ export function GraveyardApp({
   const ritual = access.ritual
   const hydrated = useSyncExternalStore(subscribeHydration, () => true, () => false)
   const [actionError, setActionError] = useState<string | null>(null)
+  const [next14Days, setNext14Days] = useState(true)
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Subscription | null>(null)
   const pathname = usePathname()
@@ -128,8 +130,8 @@ export function GraveyardApp({
   }
 
   const queue = useMemo(
-    () => decideByQueue(subscriptions, today),
-    [subscriptions, today]
+    () => next14Days ? renewalWall(subscriptions, today) : decideByQueue(subscriptions, today),
+    [subscriptions, today, next14Days]
   )
   const burn = monthlyBurn(subscriptions)
   const cut = cutThisPass(subscriptions)
@@ -379,6 +381,21 @@ export function GraveyardApp({
           <PaywallCard status={access} error={billingError} busy={checkoutBusy} onUnlock={() => void unlock()} />
         ) : null}
 
+        {view === "decide" ? (
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              variant={next14Days ? "secondary" : "outline"}
+              aria-pressed={next14Days}
+              onClick={() => setNext14Days(value => !value)}
+            >
+              Next 14 days
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              {next14Days ? "Renewals and pause reminders, today through day 14." : "All Decide · the full decision queue."}
+            </p>
+          </div>
+        ) : null}
+
         {!hydrated ? (
           <div className="space-y-2">
             <div className="h-24 animate-pulse rounded-lg bg-muted" />
@@ -393,7 +410,7 @@ export function GraveyardApp({
                 <EmptyMedia variant="icon">
                   <HugeiconsIcon icon={InboxIcon} strokeWidth={2} />
                 </EmptyMedia>
-                <EmptyTitle>Nothing to decide</EmptyTitle>
+                <EmptyTitle>{next14Days ? "Nothing renews in 14 days." : "Nothing to decide"}</EmptyTitle>
                 <EmptyDescription>
                   {canMutate
                     ? "Add the AI and dev tools you pay for, then keep, cut, or pause here."
@@ -415,6 +432,7 @@ export function GraveyardApp({
             <QueueSection
               today={today}
               rows={queue}
+              next14Days={next14Days}
               ritual={ritual}
               onDecide={decide}
               onUnpause={unpause}
@@ -578,6 +596,7 @@ function Stat({
 function QueueSection({
   today,
   rows,
+  next14Days,
   ritual,
   onDecide,
   onUnpause,
@@ -585,6 +604,7 @@ function QueueSection({
 }: {
   today: string
   rows: Subscription[]
+  next14Days: boolean
   ritual: boolean
   onDecide: (id: string, decision: Decision) => void
   onUnpause: (id: string) => void
@@ -593,12 +613,14 @@ function QueueSection({
   return (
     <section className="space-y-3" data-list="decide-by">
       <p className="hidden text-xs text-muted-foreground md:block">
-        Renewing soon, last-used not set or stale, still undecided, and pauses that are due. One action per row.
+        {next14Days
+          ? "Tools renewing in the next 14 days, including pauses with a renewal or reminder in this window."
+          : "Renewing soon, last-used not set or stale, still undecided, and pauses that are due. One action per row."}
       </p>
       {rows.length === 0 ? (
         <Empty className="border border-dashed py-10">
           <EmptyHeader>
-            <EmptyTitle>Nothing to decide</EmptyTitle>
+            <EmptyTitle>{next14Days ? "Nothing renews in 14 days." : "Nothing to decide"}</EmptyTitle>
             <EmptyDescription>
               Queue is empty. Open Inventory to browse the full list or add a tool.
             </EmptyDescription>
@@ -940,6 +962,9 @@ function CancelLink({
 function ReasonBadges({ row, today }: { row: Subscription; today: string }) {
   return (
     <div className="flex flex-wrap gap-1">
+      {row.decision === "pause" && row.remindAt ? (
+        <Badge variant="outline">Paused · remind {formatRelativeDay(row.remindAt, today)}</Badge>
+      ) : null}
       {queueReasons(row, today).map((reason) => (
         <Badge key={reason} variant="secondary">
           {reasonLabel(reason)}

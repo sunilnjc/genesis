@@ -1,4 +1,5 @@
 import { expect, test, type BrowserContext, type Page } from "@playwright/test"
+import { addDays, todayISO } from "../../src/lib/dates"
 import { playwrightAuthCookies } from "../../src/lib/auth/session-cookie"
 import { prepareIsoPair, proveApiIsolation, wipeIsoRows } from "../../scripts/isolation-test.mjs"
 
@@ -65,7 +66,7 @@ test("other account sees an empty receipt and cannot query another user’s cuts
 test("cutting on Decide persists the date and opens the receipt", async ({ page, context, baseURL }) => {
   await signIn(context, baseURL!, pair.sessionA)
   await billing(page, "trial")
-  const { error } = await pair.clientA.from("subscriptions").update({ decision: "undecided", cut_at: null, cancel_url: "" }).eq("id", pair.secretRow.id)
+  const { error } = await pair.clientA.from("subscriptions").update({ decision: "undecided", cut_at: null, cancel_url: "", renew_date: addDays(todayISO(), 3) }).eq("id", pair.secretRow.id)
   if (error) throw error
   await page.goto("/", { waitUntil: "domcontentloaded" })
   const row = page.getByRole("row").filter({ hasText: name })
@@ -76,6 +77,51 @@ test("cutting on Decide persists the date and opens the receipt", async ({ page,
   const { data } = await pair.clientA.from("subscriptions").select("decision,cut_at").eq("id", pair.secretRow.id).single()
   expect(data.decision).toBe("cut")
   expect(data.cut_at).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+})
+
+test("14-day default, all-Decide toggle, paused reminder, and cut receipt", async ({ page, context, baseURL }) => {
+  await signIn(context, baseURL!, pair.sessionA)
+  await billing(page, "trial")
+  const today = todayISO()
+  const incoming = [
+    { name: "Wall soon", renew_date: addDays(today, 3), decision: "undecided", remind_at: null },
+    { name: "Wall later", renew_date: addDays(today, 20), decision: "undecided", remind_at: null },
+    { name: "Wall paused reminder", renew_date: addDays(today, 20), decision: "pause", remind_at: addDays(today, 2) },
+  ].map(row => ({ ...pair.secretRow, ...row, id: crypto.randomUUID(), cancel_url: "", cut_at: null }))
+  const { error } = await pair.clientA.from("subscriptions").insert(incoming)
+  if (error) throw error
+  await page.goto("/", { waitUntil: "domcontentloaded" })
+  const chip = page.getByRole("button", { name: "Next 14 days", exact: true })
+  await expect(chip).toHaveAttribute("aria-pressed", "true")
+  const queue = page.getByRole("table")
+  await expect(queue.getByText("Wall soon", { exact: true })).toBeVisible()
+  await expect(queue.getByText("Wall paused reminder", { exact: true })).toBeVisible()
+  await expect(queue.getByText("Wall later", { exact: true })).toHaveCount(0)
+  await expect(queue.getByText(name, { exact: true })).toHaveCount(0)
+  await chip.click()
+  await expect(chip).toHaveAttribute("aria-pressed", "false")
+  await expect(queue.getByText("Wall later", { exact: true })).toBeVisible()
+  await chip.click()
+  await queue.getByRole("row").filter({ hasText: "Wall soon" }).getByRole("button", { name: "Cut", exact: true }).click()
+  await expect(queue.getByText("Wall soon", { exact: true })).toHaveCount(0)
+  await page.getByRole("tab", { name: "Cuts", exact: true }).first().click()
+  await expect(page.locator('[data-list="cuts"]').getByText("Wall soon", { exact: true })).toBeVisible()
+  await page.getByRole("tab", { name: "Inventory", exact: true }).first().click()
+  await expect(page.getByRole("table").getByText("Wall later", { exact: true })).toBeVisible()
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.getByRole("tab", { name: /Decide/ }).last().click()
+  await expect(chip).toHaveAttribute("aria-pressed", "true")
+  await expect(page.locator('[data-list="decide-by"]').getByText("Wall paused reminder", { exact: true }).first()).toBeVisible()
+  await page.screenshot({ path: "/tmp/ritestack-wall-mobile.png", fullPage: true })
+})
+
+test("empty 14-day view stays readable after trial", async ({ page, context, baseURL }) => {
+  await signIn(context, baseURL!, pair.sessionB)
+  await billing(page, "paywall")
+  await page.goto("/", { waitUntil: "domcontentloaded" })
+  await expect(page.getByText("Nothing renews in 14 days.", { exact: true })).toBeVisible()
+  await expect(page.getByRole("button", { name: "Next 14 days" })).toHaveAttribute("aria-pressed", "true")
+  await expect(page.getByRole("button", { name: "Cut", exact: true })).toHaveCount(0)
 })
 
 test("loading and read errors never show empty or destructive reset", async ({ page, context, baseURL }) => {
@@ -103,4 +149,24 @@ test("hosted unsigned Cuts and Inventory share the login wall", async ({ page, b
     await expect(page.getByRole("heading", { name: "Sign in to your stack" })).toBeVisible()
     await expect(page.getByText(name, { exact: true })).toHaveCount(0)
   }
+})
+
+test("hosted sandbox checkout still opens Paddle overlay without a client-side paid grant", async ({ request, baseURL }) => {
+  test.skip(new URL(baseURL!).hostname !== "ritestack.app", "Production sandbox keep-alive")
+  const headers = { Authorization: `Bearer ${pair.sessionB.access_token}` }
+  const before = await request.get("/api/billing/status", { headers })
+  expect(before.ok()).toBeTruthy()
+  const status = await before.json()
+  test.skip(status.paddleEnv !== "sandbox", "Never initiate a Live test transaction automatically")
+  expect(status.checkoutProvider).toBe("paddle")
+  expect(status.stripeMode).toBeNull()
+  const response = await request.post("/api/billing/checkout", { headers, data: { returnTo: "/unlock" } })
+  expect(response.ok()).toBeTruthy()
+  const checkout = await response.json()
+  expect(checkout.provider).toBe("paddle")
+  expect(checkout.overlay.environment).toBe("sandbox")
+  expect(Boolean(checkout.overlay.transactionId?.startsWith("txn_"))).toBeTruthy()
+  expect(Boolean(checkout.overlay.clientToken?.startsWith("test_"))).toBeTruthy()
+  const after = await request.get("/api/billing/status?checkout=success", { headers })
+  expect((await after.json()).packPaidAt).toBeNull()
 })
