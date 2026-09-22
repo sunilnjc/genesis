@@ -1,5 +1,12 @@
 # RiteStack
 
+## Project overview
+
+**Live app:** https://ritestack.app · **Stage:** deployed application; sign-in required for personal data.
+
+RiteStack helps users make deliberate renewal decisions about AI and developer tools. It combines an inventory with renewal dates, spending summaries and keep/cut/pause workflows. Engineering highlights include Next.js/TypeScript, Cloudflare Workers, Supabase magic-link authentication and row-level data isolation, and verified Paddle payment webhooks. It does not automatically cancel third-party subscriptions.
+
+
 You don’t miss the cancel button. You miss a date to decide.
 
 Keep, cut, or pause your AI/dev tool stack — last-used and a cancel URL. The list is inventory. The ritual is the product. This is not a scanner, not Gmail scrape, and not a streaming-cancel app.
