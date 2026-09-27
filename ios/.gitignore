@@ -1,0 +1,9 @@
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.xcarchive
+*.ipa
+*.xcresult
+build-*/
+RiteStackTests/IntegrationFixture.json
