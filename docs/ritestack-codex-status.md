@@ -40,3 +40,17 @@ Validation: full lint has 7 existing errors in unrelated auth/form/animation fil
 - Hosted unsigned home, mobile layout, JavaScript-disabled product/pricing, Cuts, real cut persistence, cross-account isolation, trial/paid/paywall receipt display, 14-day boundaries/toggle, paused reminders, complete Inventory, and loading/read errors verified.
 - HTTPS: HTTP 200, certificate verification successful. Unsigned Paddle webhook: HTTP 400, invalid signature. Deploy workflow still disabled.
 - Account verification is in progress; domain has returned to Action required. Do not switch Worker secrets to Live. Await the latest domain-review instructions before resubmitting.
+
+
+## iOS companion — 27 September 2026
+
+Native SwiftUI source is now in `ios/` (PR #34, main `c66328f`). Build and release instructions: `ios/README.md`; verified evidence and outstanding Apple distribution requirements: `ios/release/launch-readiness.md`.
+
+- PR #33 added bearer-authenticated self-account deletion at `/api/account`. Real iOS 17 OTP/CRUD/ownership/deletion passed using disposable QA accounts; cascades and cleanup verified.
+- Native Decide, Inventory, Cuts, 14-day view, pause/unpause, provider links, Keychain sign-in, optional local reminders, demo preview and deletion are implemented. The app is a free companion; no iOS purchase CTA or external checkout.
+- Public `/support` and iOS privacy disclosures deployed and verified. Worker version `e85278d6-c808-4653-8f8c-8c33ec97d360`. Auto-deploy workflow 361594427 remains disabled_manually.
+- 110 web tests, TypeScript, targeted lint and OpenNext build pass. Native release archive builds unsigned. Apple account/signing, TestFlight/physical-device validation and review remain outstanding; do not describe this as App Store approved or launch-ready.
+- Paddle approval was not rechecked for this task, and no billing secrets changed. Earlier Paddle-status notes above are historical, not a fresh determination.
+- Original checkout remains untouched. Work performed in `/Users/Sunil/2026/agents/genesis-ios`.
+
+Release validation follow-up: iPhone Max and iPad native decision and sample journeys verified; six real simulator screenshots saved under `ios/release/screenshots/`. Test selectors handle iPad floating tabs and duplicated confirmation accessibility elements. See the release evidence for run details.
