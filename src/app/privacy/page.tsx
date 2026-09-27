@@ -35,7 +35,7 @@ export default function PrivacyPage() {
       <LegalSection heading="What we collect">
         <p>Only what the ritual needs:</p>
         <ul className="list-disc space-y-2 pl-5 text-muted-foreground">
-          <li>Email, so we can send a magic-link sign-in.</li>
+          <li>Email, so we can send a sign-in link or one-time code.</li>
           <li>
             The rows you type: tool name, monthly cost, renew date, last-used, cancel URL, and
             keep / cut / pause.
@@ -89,6 +89,21 @@ export default function PrivacyPage() {
           Rows stay while the account stays. Write {CONTACT_EMAIL} and we will delete the account
           and the list. Backups may lag a short time. Magic-link mail is not kept as a permanent
           archive.
+        </p>
+      </LegalSection>
+
+      <LegalSection heading="The iOS companion">
+        <p className="text-muted-foreground">
+          The iOS app uses the same account and inventory. Sign-in tokens and your reminder preference
+          are stored in device-only Keychain storage. Optional reminders are scheduled on your device;
+          their notification text contains no tool names or amounts. Signing out removes the saved
+          session and reminders. Sample preview does not upload its sample rows.
+        </p>
+        <p className="text-muted-foreground">
+          You can delete your account inside the app from Account → Delete account. This removes
+          your account, inventory and access profile across devices. Backups may take a short time
+          to expire, and payment processors may retain records required by law. The iOS app contains
+          no advertising, tracking or third-party analytics SDK.
         </p>
       </LegalSection>
 

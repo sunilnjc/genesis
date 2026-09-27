@@ -1,0 +1,156 @@
+[
+  {
+    "name": "OpenAI",
+    "aliases": [
+      "openai",
+      "chatgpt",
+      "gpt"
+    ],
+    "url": "https://chatgpt.com/account/manage"
+  },
+  {
+    "name": "Claude",
+    "aliases": [
+      "claude"
+    ],
+    "url": "https://claude.ai/settings/billing"
+  },
+  {
+    "name": "Anthropic",
+    "aliases": [
+      "anthropic"
+    ],
+    "url": "https://console.anthropic.com/settings/billing"
+  },
+  {
+    "name": "Cursor",
+    "aliases": [
+      "cursor"
+    ],
+    "url": "https://cursor.com/dashboard/billing"
+  },
+  {
+    "name": "Cloudflare",
+    "aliases": [
+      "cloudflare"
+    ],
+    "url": "https://dash.cloudflare.com/?to=/:account/billing"
+  },
+  {
+    "name": "Cloudflare Workers",
+    "aliases": [
+      "cloudflare workers"
+    ],
+    "url": "https://dash.cloudflare.com/?to=/:account/billing"
+  },
+  {
+    "name": "X",
+    "aliases": [
+      "x",
+      "twitter"
+    ],
+    "url": "https://x.com/settings/subscription"
+  },
+  {
+    "name": "CoinGecko",
+    "aliases": [
+      "coingecko"
+    ],
+    "url": "https://www.coingecko.com/en/developers/dashboard"
+  },
+  {
+    "name": "GitHub",
+    "aliases": [
+      "github",
+      "copilot"
+    ],
+    "url": "https://github.com/settings/billing"
+  },
+  {
+    "name": "Notion",
+    "aliases": [
+      "notion"
+    ],
+    "url": "https://www.notion.so/my-account"
+  },
+  {
+    "name": "Figma",
+    "aliases": [
+      "figma"
+    ],
+    "url": "https://www.figma.com/settings"
+  },
+  {
+    "name": "Linear",
+    "aliases": [
+      "linear"
+    ],
+    "url": "https://linear.app/settings/billing"
+  },
+  {
+    "name": "Vercel",
+    "aliases": [
+      "vercel"
+    ],
+    "url": "https://vercel.com/account/billing"
+  },
+  {
+    "name": "Netlify",
+    "aliases": [
+      "netlify"
+    ],
+    "url": "https://app.netlify.com/user/billing"
+  },
+  {
+    "name": "Fly.io",
+    "aliases": [
+      "fly",
+      "fly.io",
+      "flyio"
+    ],
+    "url": "https://fly.io/dashboard/personal/billing"
+  },
+  {
+    "name": "Railway",
+    "aliases": [
+      "railway"
+    ],
+    "url": "https://railway.com/workspace/billing"
+  },
+  {
+    "name": "Grammarly",
+    "aliases": [
+      "grammarly"
+    ],
+    "url": "https://account.grammarly.com/subscription"
+  },
+  {
+    "name": "Supabase",
+    "aliases": [
+      "supabase"
+    ],
+    "url": "https://supabase.com/dashboard/org/_/billing"
+  },
+  {
+    "name": "Resend",
+    "aliases": [
+      "resend"
+    ],
+    "url": "https://resend.com/settings/billing"
+  },
+  {
+    "name": "Perplexity",
+    "aliases": [
+      "perplexity"
+    ],
+    "url": "https://www.perplexity.ai/account/details"
+  },
+  {
+    "name": "Gemini",
+    "aliases": [
+      "gemini",
+      "google gemini"
+    ],
+    "url": "https://one.google.com/settings"
+  }
+]

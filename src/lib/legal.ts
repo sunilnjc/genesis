@@ -6,7 +6,7 @@ export const PRODUCT_NAME = "RiteStack"
 export const PRODUCT_URL = "https://ritestack.app"
 export const CONTACT_EMAIL = "hello@ritestack.app"
 export const PADDLE_BUYER_SUPPORT = "https://paddle.net"
-export const LEGAL_UPDATED = "19 September 2026"
+export const LEGAL_UPDATED = "27 September 2026"
 export const REFUND_WINDOW_DAYS = 14
 
 /** Exact reseller sentence from the Paddle seller handbook. */
@@ -19,6 +19,7 @@ export const LEGAL_FOOTER_LINKS = [
   { href: "/terms", label: "Terms", screen: "terms" },
   { href: "/privacy", label: "Privacy", screen: "privacy" },
   { href: "/refund", label: "Refund", screen: "refund" },
+  { href: "/support", label: "Support", screen: "support" },
 ] as const
 
 export type LegalScreen = (typeof LEGAL_FOOTER_LINKS)[number]["screen"]
