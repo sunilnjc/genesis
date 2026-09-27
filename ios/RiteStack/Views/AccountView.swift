@@ -35,7 +35,7 @@ struct AccountView: View {
                 }
             }.navigationTitle("Account")
                 .confirmationDialog(store.demo ? "Exit sample stack?" : "Sign out?", isPresented: $signOut, titleVisibility: .visible) {
-                    Button(store.demo ? "Exit sample stack" : "Sign out", role: .destructive) { Task { await store.signOut() } }
+                    Button(store.demo ? "Exit sample stack" : "Sign out", role: .destructive) { Task { await store.signOut() } }.accessibilityIdentifier("confirmSignOut")
                 }
                 .sheet(isPresented: $delete) {
                     NavigationStack {

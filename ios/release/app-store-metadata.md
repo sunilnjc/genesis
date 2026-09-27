@@ -54,3 +54,8 @@ No tracking. Data linked to identity, used for App Functionality: Email Address,
 ## Submission requirements
 
 Complete the age-rating questionnaire based on the actual app (no UGC feed, chat, gambling or restricted content). Export compliance: standard OS HTTPS encryption only; `ITSAppUsesNonExemptEncryption = NO`. Apple account holder must resolve any agreements, membership or legal entity details requested by Apple. Do not invent those declarations.
+
+
+## Screenshot assets
+
+`screenshots/iphone-6.9/` contains three 1320×2868 screenshots captured from the real iPhone 17 Pro Max simulator: Decide, Inventory and Cuts. `screenshots/ipad-13/` contains the equivalent three 2064×2752 iPad Pro screenshots. They use the clearly labeled sample preview, with no customer data. Re-export from a completed XCTest result using `ios/scripts/export-screenshots.py`.
