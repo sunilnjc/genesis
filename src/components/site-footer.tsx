@@ -1,7 +1,12 @@
+"use client"
+
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { SITE_FOOTER_COPYRIGHT, SITE_FOOTER_LINKS } from "@/lib/site-footer"
 
 export function SiteFooter() {
+  const pathname = usePathname()
+  if (pathname.startsWith("/mobile/") || pathname === "/delete-account") return null
   return (
     <footer
       data-ritestack-footer="site"

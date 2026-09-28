@@ -6,7 +6,7 @@ export const PRODUCT_NAME = "RiteStack"
 export const PRODUCT_URL = "https://ritestack.app"
 export const CONTACT_EMAIL = "hello@ritestack.app"
 export const PADDLE_BUYER_SUPPORT = "https://paddle.net"
-export const LEGAL_UPDATED = "27 September 2026"
+export const LEGAL_UPDATED = "28 September 2026"
 export const REFUND_WINDOW_DAYS = 14
 
 /** Exact reseller sentence from the Paddle seller handbook. */

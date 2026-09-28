@@ -54,3 +54,11 @@ Native SwiftUI source is now in `ios/` (PR #34, main `c66328f`). Build and relea
 - Original checkout remains untouched. Work performed in `/Users/Sunil/2026/agents/genesis-ios`.
 
 Release validation follow-up: iPhone Max and iPad native decision and sample journeys verified; six real simulator screenshots saved under `ios/release/screenshots/`. Test selectors handle iPad floating tabs and duplicated confirmation accessibility elements. See the release evidence for run details.
+
+## 28 September 2026 — native Android companion
+
+The native Android app is under `android/` (Kotlin/Compose, min API26, target API36, `app.ritestack.android`). It uses the existing RiteStack Supabase backend and account deletion endpoint, and offers email OTP/password authentication, Decide/Inventory/Cuts, per-row editing, local reminders, account deletion and local sample mode. There is no in-app purchase/checkout flow. Android Keystore protects sessions.
+
+Validation and release boundaries are maintained in `android/release/launch-readiness.md`; Play account setup and publishing steps are in `android/release/play-console-guide.md`. The 16 JVM tests and API34/API36 sample journeys passed, plus a disposable live account lifecycle with verified cleanup. Debug APK and unsigned release AAB build. Google Play account verification, signing, real-device testing, review credentials and the required closed test remain separate launch requirements.
+
+Shared web legal text now supports `/mobile/privacy`, `/mobile/terms`, `/mobile/refund` and `/mobile/support`, with no onward purchase navigation. `/delete-account` provides the public email deletion pathway required by Play. No payment configuration, Supabase project configuration or customer account was changed.
