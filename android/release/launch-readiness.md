@@ -11,7 +11,7 @@ The native Android app is implemented and has passed local build, domain and emu
 - Android 14 (API 34) Pixel 7 emulator: four Compose journeys pass (invalid input; add/exit/reset; pause/unpause/cut; screenshot capture).
 - Live Android 14 integration passes: password sign-in, CRUD, Keep/Cut/Pause/Unpause, Keystore session restoration, cross-account isolation, account deletion and rejected authentication after deletion. Two disposable QA accounts were deleted; zero associated profiles/inventory remain. No customer data was used. The private fixture was removed and the test APK rebuilt without it.
 - Android 16 (API 36) Pixel 7 emulator: all four Compose journeys pass. Four real Android screenshots captured at 1080×2400 and visually reviewed.
-- Reminder device test: final result recorded below after execution.
+- Android 16 reminder device test passes: notification permission, queued work, generic/private content, sign-out cancellation and rejection of stale delivery. Final-theme screenshot capture also passes.
 - Web support changes: 113 tests, TypeScript, changed-file ESLint and OpenNext production build pass.
 - Store assets: real Android screenshots, existing 512×512 logo, and rendered 1024×500 feature graphic in `release/`.
 
