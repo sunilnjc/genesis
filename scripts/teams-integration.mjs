@@ -112,7 +112,7 @@ await denied(
 );
 const token = randomUUID();
 const hash = createHash("sha256").update(token).digest("hex");
-const inv = await command("owner", a, "invite", {
+await command("owner", a, "invite", {
   email: "teams-member@example.invalid",
   role: "member",
   token_hash: hash,
@@ -403,8 +403,6 @@ const rollback=await clients.owner.from('team_subscriptions').select('id').eq('w
 await denied('owner',a,'import_tools',{rows:[{...input,name:'Imported A',owner_id:users.owner}]},'23505');
 const audit=await clients.owner.from('activity_events').delete().eq('workspace_id',a);assert.ok(audit.error);assertions++;
 // Restore member for browser journey; these are local fixtures only.
-const browserToken = "b".repeat(64);
-const browserHash = createHash("sha256").update(browserToken).digest("hex");
 const browserInvite = await command("owner", a, "invite", {
   email: "teams-member@example.invalid",
   role: "member",
