@@ -1,0 +1,12 @@
+/.gradle/
+/.kotlin/
+/.idea/
+**/build/
+/local.properties
+/keystore.properties
+*.jks
+*.keystore
+*.hprof
+/app/src/androidTest/assets/integration.json
+hs_err_pid*.log
+replay_pid*.log

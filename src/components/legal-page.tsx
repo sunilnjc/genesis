@@ -12,11 +12,13 @@ export function LegalPage({
   title,
   lede,
   children,
+  mobile = false,
 }: {
   screen: LegalScreen
   title: string
   lede: string
   children: ReactNode
+  mobile?: boolean
 }) {
   return (
     <main
@@ -45,14 +47,15 @@ export function LegalPage({
               {link.label}
             </span>
           ) : (
-            <Link key={link.href} href={link.href} className="underline-offset-4 hover:underline">
+            <Link key={link.href} href={mobile ? `/mobile${link.href}` : link.href} className="underline-offset-4 hover:underline">
               {link.label}
             </Link>
           )
         )}
-        <Link href="/about" className="underline-offset-4 hover:underline">
+        {!mobile && <Link href="/about" className="underline-offset-4 hover:underline">
           About
-        </Link>
+        </Link>}
+        {mobile && <Link href="/delete-account" className="underline-offset-4 hover:underline">Delete account</Link>}
         <a href={`mailto:${CONTACT_EMAIL}`} className="underline-offset-4 hover:underline">
           {CONTACT_EMAIL}
         </a>

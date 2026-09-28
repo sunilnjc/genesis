@@ -32,9 +32,9 @@ test("operator facts Paddle checks are explicit", () => {
 
 test("terms, privacy, and refund name the founder and hello@", () => {
   const files = [
-    "src/app/terms/page.tsx",
-    "src/app/privacy/page.tsx",
-    "src/app/refund/page.tsx",
+    "src/components/terms-content.tsx",
+    "src/components/privacy-content.tsx",
+    "src/components/refund-content.tsx",
   ]
   for (const file of files) {
     const src = pageSource(file)
@@ -48,7 +48,7 @@ test("terms, privacy, and refund name the founder and hello@", () => {
 })
 
 test("terms include the Paddle merchant-of-record sentence", () => {
-  const src = pageSource("src/app/terms/page.tsx")
+  const src = pageSource("src/components/terms-content.tsx")
   assert.match(src, /PADDLE_MOR_NOTICE/)
   assert.match(src, /\$14 once/)
   assert.match(src, /seven days/)
@@ -57,8 +57,49 @@ test("terms include the Paddle merchant-of-record sentence", () => {
 })
 
 test("refund is a short window through hello@", () => {
-  const src = pageSource("src/app/refund/page.tsx")
+  const src = pageSource("src/components/refund-content.tsx")
   assert.match(src, /REFUND_WINDOW_DAYS/)
   assert.match(src, /PADDLE_MOR_NOTICE/)
   assert.match(src, /paddle\.net/)
+})
+
+
+test("web and mobile legal routes use the same policy content", () => {
+  for (const name of ["terms", "privacy", "refund", "support"]) {
+    const component = `${name[0].toUpperCase()}${name.slice(1)}Content`
+    const web = pageSource(`src/app/${name}/page.tsx`)
+    const mobile = pageSource(`src/app/mobile/${name}/page.tsx`)
+    assert.ok(web.includes(`@/components/${name}-content`))
+    assert.ok(mobile.includes(`@/components/${name}-content`))
+    assert.ok(web.includes(`<${component} />`))
+    assert.ok(mobile.includes(`<${component} mobile />`))
+  }
+})
+
+test("mobile legal navigation stays within administrative resources", () => {
+  const legal = pageSource("src/components/legal-page.tsx")
+  assert.ok(legal.includes('mobile ? `/mobile${link.href}` : link.href'))
+  assert.ok(legal.includes('{!mobile && <Link href="/about"'))
+  assert.ok(legal.includes('href="/delete-account"'))
+  for (const name of ["privacy", "refund"]) {
+    const content = pageSource(`src/components/${name}-content.tsx`)
+    assert.ok(content.includes('{mobile ? <span>paddle.net</span> : <a'))
+  }
+  const terms = pageSource("src/components/terms-content.tsx")
+  assert.ok(terms.includes('mobile ? "/mobile/refund" : "/refund"'))
+  assert.ok(terms.includes('mobile ? "/mobile/privacy" : "/privacy"'))
+  const footer = pageSource("src/components/site-footer.tsx")
+  assert.ok(footer.includes('if (pathname.startsWith("/mobile/") || pathname === "/delete-account") return null'))
+})
+
+test("public deletion explains an app-independent request and data scope", () => {
+  const source = pageSource("src/app/delete-account/page.tsx")
+  assert.match(source, /without installing or signing in/)
+  assert.match(source, /mailto:/)
+  assert.match(source, /CONTACT_EMAIL/)
+  assert.match(source, /verify ownership/)
+  assert.match(source, /sign-in account, access profile and tool inventory/)
+  assert.match(source, /Backups/)
+  assert.match(source, /Payment processors/)
+  assert.match(source, /does not cancel subscriptions/)
 })
