@@ -31,7 +31,8 @@ export function isSupabaseConfigured() {
   const { url, anonKey } = readPublicSupabaseEnv()
   if (!url || !anonKey) return false
   assertNotJobPursuit(url)
-  return url.startsWith("https://") && url.includes(".supabase.co")
+  return (url.startsWith("https://") && url.includes(".supabase.co")) ||
+    (process.env.NEXT_PUBLIC_ENABLE_LOCAL_SUPABASE === "true" && /^http:\/\/(127\.0\.0\.1|localhost):\d+$/.test(url))
 }
 
 export function hostedRequiresLogin(hostname?: string) {

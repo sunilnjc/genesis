@@ -1,0 +1,40 @@
+name: Teams isolation
+on:
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'supabase/**'
+      - 'scripts/teams-*.mjs'
+      - 'tests/**'
+      - 'package*.json'
+      - '.github/workflows/teams.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  local-isolation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx --yes supabase@2.118.0 start -x studio,realtime,storage-api,imgproxy,postgres-meta,edge-runtime,logflare,vector
+      - run: node scripts/teams-local-env.mjs
+      - run: node --env-file=.env.local scripts/teams-integration.mjs
+      - run: npm test
+      - run: npx tsc --noEmit
+      - run: npx eslint src/lib/teams src/components/teams src/app/api/workspaces src/app/teams src/app/w src/lib/auth/config.ts src/app/auth/callback/route.ts
+      - name: HTTP checks
+        run: |
+          npx next dev --webpack --hostname 127.0.0.1 --port 4318 > /tmp/teams-next.log 2>&1 &
+          for attempt in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:4318/teams > /dev/null; then break; fi
+            sleep 2
+          done
+          node --env-file=.env.local scripts/teams-api-smoke.mjs
+      - if: always()
+        run: npx --yes supabase@2.118.0 stop --no-backup

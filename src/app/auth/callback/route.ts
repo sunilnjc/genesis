@@ -10,7 +10,7 @@ import { applyCookies, createRiteStackServerClient } from "@/lib/supabase/server
 export const dynamic = "force-dynamic"
 
 function fail(request: NextRequest, reason: ReturnType<typeof classifyAuthFailure>, pending: Parameters<typeof applyCookies>[1]) {
-  return applyCookies(NextResponse.redirect(new URL(authErrorPath(reason), request.url)), pending)
+  return applyCookies(NextResponse.redirect(new URL(authErrorPath(reason), process.env.NEXT_PUBLIC_APP_URL || request.url)), pending)
 }
 
 export async function GET(request: NextRequest) {
@@ -33,18 +33,18 @@ export async function GET(request: NextRequest) {
         token_hash: parsed.tokenHash,
       })
       if (error) return fail(request, classifyAuthFailure(error.message), pending)
-      return applyCookies(NextResponse.redirect(new URL(next, request.url)), pending)
+      return applyCookies(NextResponse.redirect(new URL(next, process.env.NEXT_PUBLIC_APP_URL || request.url)), pending)
     }
 
     if (parsed.kind === "pkce_code" && parsed.code) {
       const { error } = await supabase.auth.exchangeCodeForSession(parsed.code)
       if (error) return fail(request, classifyAuthFailure(error.message), pending)
-      return applyCookies(NextResponse.redirect(new URL(next, request.url)), pending)
+      return applyCookies(NextResponse.redirect(new URL(next, process.env.NEXT_PUBLIC_APP_URL || request.url)), pending)
     }
 
     const { data } = await supabase.auth.getUser()
     if (data.user) {
-      return applyCookies(NextResponse.redirect(new URL(next, request.url)), pending)
+      return applyCookies(NextResponse.redirect(new URL(next, process.env.NEXT_PUBLIC_APP_URL || request.url)), pending)
     }
     return fail(request, parsed.kind === "empty" ? "missing" : classifyAuthFailure(null), pending)
   } catch (cause) {
