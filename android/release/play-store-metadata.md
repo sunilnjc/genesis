@@ -9,7 +9,7 @@ Verify every feature against the final Android build before submitting.
 - Contact: hello@ritestack.app
 - Website: https://ritestack.app
 - Privacy policy: https://ritestack.app/mobile/privacy
-- Account deletion: https://ritestack.app/delete-account (deploy and verify before entering)
+- Account deletion: https://ritestack.app/delete-account (live and verified on 28 September 2026)
 
 ## Full description
 

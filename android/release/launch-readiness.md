@@ -13,6 +13,7 @@ The native Android app is implemented and has passed local build, domain and emu
 - Android 16 (API 36) Pixel 7 emulator: all four Compose journeys pass. Four real Android screenshots captured at 1080×2400 and visually reviewed.
 - Android 16 reminder device test passes: notification permission, queued work, generic/private content, sign-out cancellation and rejection of stale delivery. Final-theme screenshot capture also passes.
 - Web support changes: 113 tests, TypeScript, changed-file ESLint and OpenNext production build pass.
+- GitHub Android validation passed for the implementation commit (`cb5ace2`, run `36440856804`); subsequent changes only refresh documentation/screenshots.
 - Store assets: real Android screenshots, existing 512×512 logo, and rendered 1024×500 feature graphic in `release/`.
 
 ## Local artifacts
@@ -22,11 +23,12 @@ The native Android app is implemented and has passed local build, domain and emu
 - Unit report: `app/build/reports/tests/testDebugUnitTest/index.html`.
 - Lint report: `app/build/reports/lint-results-debug.html`.
 - Screenshots: `release/screenshots/01-Decide.png` through `04-Account.png`.
+- GitHub Android validation passed for the implementation commit (`cb5ace2`, run `36440856804`); subsequent changes only refresh documentation/screenshots.
 - Store assets: `release/assets/`.
 
 ## Remaining launch work
 
-- [ ] Deploy and verify public deletion and mobile policy routes (deployment evidence to follow).
+- [x] Public deletion and mobile policy routes deployed and verified over HTTPS (200 responses; mobile links remain restricted to policy/support/deletion). Cloudflare Worker `a2330dd7-be02-4bb6-8b0f-718c37ee2992`.
 - [ ] Provision a reusable private review identity with active access. Ordinary password authentication is supported; no credentials are hardcoded and no authentication bypass exists. Sample mode alone does not cover authenticated review.
 - [ ] Verify Play Console owner/account, identity and physical-device requirements.
 - [ ] Create/back up the upload key, sign the release AAB, enroll in Play App Signing and install through internal testing.
