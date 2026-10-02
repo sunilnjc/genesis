@@ -19,7 +19,8 @@ export type RiteStackAuth = {
   isLocalhost: boolean
   configured: boolean
   supabase: SupabaseClient | null
-  signInWithMagicLink: (email: string) => Promise<{ error: string | null }>
+  requestSignInCode: (email: string) => Promise<{ error: string | null }>
+  verifySignInCode: (email: string, code: string) => Promise<{ error: string | null }>
   signOut: () => Promise<void>
 }
 

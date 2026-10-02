@@ -33,7 +33,7 @@ async function assertMagicLinkForm(page: Page) {
   await expect(form).toBeVisible()
   await expect(form.locator("#email")).toBeVisible()
   await expect(form.locator("#email")).toHaveAttribute("type", "email")
-  await expect(form.getByRole("button", { name: "Email me a sign-in link" })).toBeVisible()
+  await expect(form.getByRole("button", { name: "Email me a sign-in code" })).toBeVisible()
   await expect(page.getByRole("button", { name: "Sign out" })).toHaveCount(0)
 }
 

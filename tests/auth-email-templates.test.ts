@@ -33,23 +33,23 @@ function startTags(source) {
   return tags
 }
 
-test("both auth flows have code and confirmation link", () => {
+test("both auth flows send only a code, with no consumable sign-in link", () => {
   for (const filename of TEMPLATES) {
     const source = readFileSync(join(TEMPLATE_DIR, filename), "utf8")
     assert.equal(source.split("{{ .Token }}").length - 1, 1)
-    assert.equal(source.split("{{ .ConfirmationURL }}").length - 1, 1)
+    assert.equal(source.includes("{{ .ConfirmationURL }}"), false)
     const vars = [...source.matchAll(/\{\{\s*([^}]+?)\s*\}\}/g)].map((m) => m[1])
-    assert.deepEqual(new Set(vars), new Set([".Token", ".ConfirmationURL"]))
+    assert.deepEqual(new Set(vars), new Set([".Token"]))
   }
 })
 
-test("link uses ConfirmationURL placeholder filled by the mailer", () => {
+test("sign-in emails contain no links for email scanners to consume", () => {
   for (const filename of TEMPLATES) {
     const source = readFileSync(join(TEMPLATE_DIR, filename), "utf8")
     const links = startTags(source)
       .filter(([tag]) => tag === "a")
       .map(([, attrs]) => attrs.href)
-    assert.deepEqual(links, ["{{ .ConfirmationURL }}"])
+    assert.deepEqual(links, [])
   }
 })
 
@@ -133,7 +133,7 @@ test("renderer fills gotrue placeholders only", () => {
   assert.equal(html.includes("305805"), true)
   assert.equal(html.includes("{{ .Token }}"), false)
   assert.equal(html.includes("{{ .ConfirmationURL }}"), false)
-  assert.equal(html.includes("https://ritestack.app/auth/callback?token_hash=deadbeef&type=magiclink"), true)
+  assert.equal(html.includes("token_hash="), false)
   assert.equal(html.includes(`${RITESTACK_SUPABASE_REF}.supabase.co/auth/v1/verify`), false)
   assert.equal(html.includes("thejobpursuit"), false)
 })

@@ -51,7 +51,7 @@ export default {
         from: { email: FROM_EMAIL, name: FROM_NAME },
         subject: subjectFor(emailData.email_action_type, emailData.token),
         html,
-        text: `Your RiteStack code is ${emailData.token || ""}. Open the sign-in link from the HTML email, or request a new one in the app.`,
+        text: `Your RiteStack code is ${emailData.token || ""}. Enter the newest code on the RiteStack sign-in screen. Use it once; request a new code if it has expired. Never share this code.`,
       })
     } catch (error) {
       return json({ error: { message: error.message || "Email send failed." } }, 500)

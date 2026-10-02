@@ -38,7 +38,7 @@ test("provider PKCE error is classified, never shown raw", () => {
   assert.equal(classifyAuthFailure(parsed.error), "pkce")
   const message = friendlyAuthError(parsed.error)
   assert.equal(/pkce|code verifier/i.test(message), false)
-  assert.match(message, /mail app/i)
+  assert.match(message, /sign-in code/i)
   assert.equal(authErrorPath("pkce"), "/auth/error?reason=pkce")
   assert.equal(/pkce|code verifier/i.test(friendlyAuthError("pkce")), false)
 })
