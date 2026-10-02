@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import {createClient} from '@supabase/supabase-js';
+import {randomUUID} from 'node:crypto';
+assert.equal(process.env.NEXT_PUBLIC_SUPABASE_URL,'http://127.0.0.1:57321');
+const base='http://127.0.0.1:4318';
+const client=createClient(process.env.NEXT_PUBLIC_SUPABASE_URL,process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
+const {data,error}=await client.auth.signInWithPassword({email:'teams-owner@example.invalid',password:'Teams-local-only-2026!'});assert.ifError(error);
+const headers={'Authorization':`Bearer ${data.session.access_token}`,'Content-Type':'application/json','Origin':base};
+assert.equal((await fetch(base+'/api/workspaces')).status,401);
+assert.equal((await fetch(base+'/api/workspaces',{method:'POST',headers:{...headers,Origin:'https://untrusted.example'},body:'{}'})).status,403);
+const response=await fetch(base+'/api/workspaces',{method:'POST',headers,body:JSON.stringify({action:'create_workspace',key:randomUUID(),data:{name:'API smoke',timezone:'UTC'}})});
+assert.equal(response.status,200,await response.clone().text());const workspace=(await response.json()).workspace_id;
+const read=await fetch(`${base}/api/workspaces?workspace=${workspace}`,{headers});assert.equal(read.status,200);assert.equal(read.headers.get('cache-control'),'no-store');
+const snapshot=await read.json();assert.equal(snapshot.members.length,1);assert.equal(snapshot.members[0].role,'owner');
+const invite=await fetch(base+'/api/workspaces',{method:'POST',headers,body:JSON.stringify({workspace,action:'invite',key:randomUUID(),data:{email:'teams-member@example.invalid',role:'member'}})});assert.equal(invite.status,200);assert.match((await invite.json()).invitePath,/^\/teams#invite=[a-f0-9]{64}$/);
+const invalid=await fetch(base+'/api/workspaces',{method:'POST',headers,body:'not json'});assert.equal(invalid.status,400);
+assert.equal((await fetch(base+'/api/workspaces?workspace='+randomUUID(),{headers})).status,403);
+console.log('PASS: HTTP authentication, CSRF, workspace creation/read, invitation generation, malformed input, and tenant denial.');
