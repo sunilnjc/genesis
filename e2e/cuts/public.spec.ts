@@ -19,7 +19,7 @@ test("mobile visitors can read the offer and sign in without overflow", async ({
   await page.goto(baseURL!, { waitUntil: "domcontentloaded" })
   await expect(page.getByRole("heading", { name: "Know what stays. Decide what goes." })).toBeVisible()
   await page.getByRole("link", { name: "Sign in", exact: true }).click()
-  await expect(page.getByRole("button", { name: "Email me a sign-in link" })).toBeVisible()
+  await expect(page.getByRole("button", { name: "Email me a sign-in code" })).toBeVisible()
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy()
   await page.screenshot({ path: "/tmp/ritestack-public-mobile.png", fullPage: true })
 })

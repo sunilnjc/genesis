@@ -29,7 +29,7 @@ export function PrivacyContent({ mobile = false }: { mobile?: boolean }) {
       <LegalSection heading="What we collect">
         <p>Only what the ritual needs:</p>
         <ul className="list-disc space-y-2 pl-5 text-muted-foreground">
-          <li>Email, so we can send a sign-in link or one-time code.</li>
+          <li>Email, so we can send a one-time sign-in code.</li>
           <li>
             The rows you type: tool name, monthly cost, renew date, last-used, cancel URL, and
             keep / cut / pause.

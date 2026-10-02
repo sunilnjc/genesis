@@ -66,11 +66,11 @@ export function classifyAuthFailure(message: string | null | undefined): AuthErr
 }
 
 const FRIENDLY: Record<AuthErrorReason, string> = {
-  pkce: "That sign-in link could not finish in this browser. Request a new link from RiteStack and open it — the mail app is fine.",
-  otp: "That sign-in link is invalid. Request a new one from the app.",
-  expired: "That sign-in link is invalid or has expired. Request a new one from the app.",
-  missing: "This sign-in link is incomplete. Request a new one from the app.",
-  exchange: "Could not finish sign-in. Request a new link from the app.",
+  pkce: "That sign-in link could not finish in this browser. Go back to RiteStack and request a sign-in code.",
+  otp: "That sign-in link is invalid. Go back to RiteStack and request a sign-in code.",
+  expired: "That sign-in link is invalid or has expired. Go back to RiteStack and request a sign-in code.",
+  missing: "This sign-in link is incomplete. Go back to RiteStack and request a sign-in code.",
+  exchange: "Could not finish sign-in. Go back to RiteStack and request a sign-in code.",
   config: "RiteStack auth is not configured in this build.",
 }
 

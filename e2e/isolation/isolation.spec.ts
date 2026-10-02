@@ -43,7 +43,7 @@ async function injectSession(
 
 async function waitForLogin(page: Page) {
   await expect(page.getByRole("heading", { name: "Sign in to your stack" })).toBeVisible()
-  await expect(page.getByRole("button", { name: "Email me a sign-in link" })).toBeVisible()
+  await expect(page.getByRole("button", { name: "Email me a sign-in code" })).toBeVisible()
 }
 
 async function waitForApp(page: Page, userId: string) {

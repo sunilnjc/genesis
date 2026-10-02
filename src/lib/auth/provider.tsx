@@ -1,20 +1,13 @@
 "use client"
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react"
-import { AUTH_CALLBACK_PATH, isBrowserLocalhost, isSupabaseConfigured } from "@/lib/auth/config"
+import { isBrowserLocalhost, isSupabaseConfigured } from "@/lib/auth/config"
+import { requestEmailCode, verifyEmailCode } from "@/lib/auth/email-otp"
 import { cacheAuth } from "@/lib/auth/session"
 import type { RiteStackAuth } from "@/lib/auth/types"
 import { getBrowserSupabase } from "@/lib/supabase/client"
 
 const AuthContext = createContext<RiteStackAuth | null>(null)
-
-function redirectTo() {
-  if (typeof window === "undefined") return undefined
-  const next = window.location.pathname === "/unlock" ? "/unlock" : ""
-  const url = new URL(AUTH_CALLBACK_PATH, window.location.origin)
-  if (next) url.searchParams.set("next", next)
-  return url.toString()
-}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const configured = isSupabaseConfigured()
@@ -61,20 +54,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [configured, supabase])
 
-  const signInWithMagicLink = useCallback(
-    async (email: string) => {
-      if (!supabase) return { error: "Supabase is not configured for this build." }
-      const trimmed = email.trim()
-      if (!trimmed || !trimmed.includes("@")) return { error: "Enter a real email address." }
-      const { error } = await supabase.auth.signInWithOtp({
-        email: trimmed,
-        options: {
-          emailRedirectTo: redirectTo(),
-          shouldCreateUser: true,
-        },
-      })
-      return { error: error?.message ?? null }
-    },
+  const requestSignInCode = useCallback(
+    (email: string) => requestEmailCode(supabase?.auth ?? null, email),
+    [supabase]
+  )
+  const verifySignInCode = useCallback(
+    (email: string, code: string) => verifyEmailCode(supabase?.auth ?? null, email, code),
     [supabase]
   )
 
@@ -104,10 +89,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLocalhost,
       configured,
       supabase,
-      signInWithMagicLink,
+      requestSignInCode,
+      verifySignInCode,
       signOut,
     }),
-    [configured, isLocalhost, requiresLogin, session, signInWithMagicLink, signOut, status, supabase, user]
+    [configured, isLocalhost, requiresLogin, session, requestSignInCode, verifySignInCode, signOut, status, supabase, user]
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

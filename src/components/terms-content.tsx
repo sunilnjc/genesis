@@ -39,7 +39,7 @@ export function TermsContent({ mobile = false }: { mobile?: boolean }) {
           URL. Inventory is the list. The ritual is the product.
         </p>
         <p className="text-muted-foreground">
-          After you sign in with a magic link, keep / cut / pause is unlocked for seven days. Then
+          After you sign in with an email code, keep / cut / pause is unlocked for seven days. Then
           the ritual is $14 once. Looking at your stack stays free. That $14 is this ritual — not a
           subscription, not a monthly plan, not a lifetime pass to every future feature.
         </p>
@@ -58,8 +58,8 @@ export function TermsContent({ mobile = false }: { mobile?: boolean }) {
 
       <LegalSection heading="Your account">
         <p>
-          You sign in with the email we send a link to. The list under that email is yours. Do not
-          share the link. If you lose access, write {CONTACT_EMAIL}.
+          You sign in with a one-time code sent to your email. The list under that email is yours. Do not
+          share the code. If you lose access, write {CONTACT_EMAIL}.
         </p>
         <p className="text-muted-foreground">
           You are responsible for the names, amounts, and cancel URLs you store. We do not cancel
