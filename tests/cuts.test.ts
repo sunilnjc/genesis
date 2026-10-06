@@ -28,7 +28,7 @@ test("only cuts appear, newest cut first, regardless of later edits", () => {
   const original = [...rows]
   assert.deepEqual(cutReceipts(rows).map(r => r.id), ["a", "older", "missing"])
   assert.deepEqual(rows, original)
-  assert.equal(monthlyBurn(rows), 42)
+  assert.equal(monthlyBurn(rows), 84)
 })
 test("receipt links accept only web URLs", () => {
   assert.equal(receiptCancelUrl(row.cancelUrl), row.cancelUrl)

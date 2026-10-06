@@ -13,6 +13,9 @@ export type SubscriptionRow = {
   remind_at: string | null
   is_sample: boolean
   cut_at: string | null
+  cancellation_confirmed_at?: string | null
+  cancellation_note?: string
+  billing_url?: string
   created_at: string
   updated_at: string
 }
@@ -30,6 +33,9 @@ export function toSubscription(row: SubscriptionRow): Subscription {
     remindAt: row.remind_at,
     isSample: row.is_sample,
     cutAt: row.cut_at,
+    cancellationConfirmedAt: row.cancellation_confirmed_at ?? null,
+    cancellationNote: row.cancellation_note ?? "",
+    billingUrl: row.billing_url ?? "",
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }
@@ -52,6 +58,9 @@ export function toSubscriptionRow(row: Subscription, userId: string): Subscripti
     remind_at: row.remindAt,
     is_sample: row.isSample,
     cut_at: row.cutAt,
+    cancellation_confirmed_at: row.cancellationConfirmedAt ?? null,
+    cancellation_note: row.cancellationNote ?? "",
+    billing_url: row.billingUrl ?? "",
     created_at: row.createdAt,
     updated_at: row.updatedAt,
   }

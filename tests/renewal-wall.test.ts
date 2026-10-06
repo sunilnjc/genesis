@@ -9,8 +9,8 @@ function row(id: string, days: number, extra: Partial<Subscription> = {}): Subsc
     lastUsed: null, decision: "undecided", remindAt: null, isSample: false, cutAt: null,
     createdAt: today, updatedAt: today, ...extra }
 }
-test("14-day window includes today and day 14; excludes overdue, day 15, and cuts", () => {
-  const rows = [row("day15",15), row("day14",14), row("today",0), row("overdue",-1), row("cut",3,{ decision: "cut" }), row("keep",3,{ decision: "keep" })]
+test("14-day window includes today and day 14; excludes ordinary overdue, day 15, and confirmed cuts", () => {
+  const rows = [row("day15",15), row("day14",14), row("today",0), row("overdue",-1), row("cut",3,{ decision: "cut", cancellationConfirmedAt: today }), row("keep",3,{ decision: "keep" })]
   const before = [...rows]
   assert.deepEqual(renewalWall(rows,today).map(r=>r.id), ["today","keep","day14"])
   assert.deepEqual(rows,before)
@@ -22,7 +22,7 @@ test("pause appears for either existing renewal or reminder in the window", () =
     row("remind14",20,{ decision:"pause", remindAt:addDays(today,14) }),
     row("later",20,{ decision:"pause", remindAt:addDays(today,15) }),
     row("past",20,{ decision:"pause", remindAt:addDays(today,-1) }),
-    row("cut",1,{ decision:"cut", remindAt:today }),
+    row("cut",1,{ decision:"cut", cancellationConfirmedAt:today, remindAt:today }),
   ]
   assert.deepEqual(renewalWall(rows,today).map(r=>r.id), ["remind","renew","remind14"])
 })

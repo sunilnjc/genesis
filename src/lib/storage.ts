@@ -32,6 +32,9 @@ function isSubscription(value: unknown): value is Subscription {
     (row.remindAt === null || typeof row.remindAt === "string") &&
     typeof row.isSample === "boolean" &&
     (row.cutAt === null || typeof row.cutAt === "string") &&
+    (row.cancellationConfirmedAt == null || typeof row.cancellationConfirmedAt === "string") &&
+    (row.cancellationNote == null || typeof row.cancellationNote === "string") &&
+    (row.billingUrl == null || typeof row.billingUrl === "string") &&
     typeof row.createdAt === "string" &&
     typeof row.updatedAt === "string"
   )

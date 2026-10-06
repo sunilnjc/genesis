@@ -1,10 +1,11 @@
 "use client"
 
-import { useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from "react"
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { Alert02Icon, Add01Icon, InboxIcon, Link01Icon, MoreHorizontalIcon, PauseIcon, PlayIcon, ScissorIcon, Tick02Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
+import { cancellationPending } from "@/lib/cancellation"
 import { CutsSection } from "@/components/cuts-section"
 import { SubscriptionForm, parseCost } from "@/components/subscription-form"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -56,12 +57,12 @@ import { cn } from "@/lib/utils"
 import { useEntitlement } from "@/lib/use-entitlement"
 import { pathForView, pathFromHash, viewFromPathname, type AppView } from "@/lib/views"
 
-function decisionBadge(decision: Decision) {
-  switch (decision) {
+function decisionBadge(row: Subscription) {
+  switch (row.decision) {
     case "keep":
       return <Badge variant="outline">Keep</Badge>
     case "cut":
-      return <Badge variant="destructive">Cut</Badge>
+      return <Badge variant={cancellationPending(row) ? "destructive" : "outline"}>{cancellationPending(row) ? "Cancellation pending" : "Cancellation confirmed"}</Badge>
     case "pause":
       return <Badge variant="secondary">Pause</Badge>
     default:
@@ -95,6 +96,7 @@ export function GraveyardApp({
   } = useEntitlement()
   const ritual = access.ritual
   const hydrated = useSyncExternalStore(subscribeHydration, () => true, () => false)
+  const saving = useRef(false)
   const [actionError, setActionError] = useState<string | null>(null)
   const [next14Days, setNext14Days] = useState(true)
   const [formOpen, setFormOpen] = useState(false)
@@ -114,8 +116,10 @@ export function GraveyardApp({
   }, [pathname, router])
 
   async function withSave(updater: (current: Subscription[]) => Subscription[]) {
-    const next = updater(subscriptions)
+    if (saving.current) return false
+    saving.current = true
     try {
+      const next = updater(subscriptions)
       await replace(next)
       setActionError(null)
       return true
@@ -126,6 +130,8 @@ export function GraveyardApp({
           : "Could not save. The form is still open and nothing was overwritten."
       )
       return false
+    } finally {
+      saving.current = false
     }
   }
 
@@ -182,24 +188,32 @@ export function GraveyardApp({
     }
   }
 
-  function decide(id: string, decision: Decision) {
+  async function decide(id: string, decision: Decision) {
     if (!ritual) return
     const now = new Date().toISOString()
     const target = subscriptions.find((row) => row.id === id)
     if (!target) return
-    if (decision === "cut" && target.cancelUrl) openCancelUrl(target.cancelUrl)
-    void withSave((current) =>
+    const saved = await withSave((current) =>
       current.map((row) => {
         if (row.id !== id) return row
         return {
           ...row,
           decision,
           remindAt: decision === "pause" ? addDays(today, PAUSE_REMIND_DAYS) : null,
-          cutAt: decision === "cut" ? today : null,
+          cutAt: decision === "cut" ? (row.cutAt ?? today) : null,
+          cancellationConfirmedAt: null,
+          cancellationNote: "",
           updatedAt: now,
         }
       })
     )
+    if (saved && decision === "cut") router.push("/cuts")
+  }
+
+  async function updateCancellation(id: string, patch: Partial<Subscription>) {
+    if (!canMutate) return false
+    return withSave(current => current.map(row => row.id === id && row.decision === "cut"
+      ? { ...row, ...patch, updatedAt: new Date().toISOString() } : row))
   }
 
   function unpause(id: string) {
@@ -293,7 +307,7 @@ export function GraveyardApp({
         ) : view === "cuts" ? (
           <>
             <p className="font-heading text-xl font-medium tracking-tight">Cuts</p>
-            <p className="text-xs text-muted-foreground">The tools you chose to stop paying for.</p>
+            <p className="text-xs text-muted-foreground">Finish cancellations and keep your confirmations.</p>
           </>
         ) : (
           <>
@@ -325,7 +339,7 @@ export function GraveyardApp({
                 {view === "decide"
                   ? "Keep, cut, or pause — one sitting. The full list lives in Inventory."
                   : view === "cuts"
-                    ? "The tools you chose to stop paying for. Your receipts stay free to view."
+                    ? "Finish pending cancellations and keep your confirmation records."
                     : "The list you pay for. Add, edit, and see monthly burn. Ritual is Decide."}
               </p>
             </div>
@@ -391,7 +405,7 @@ export function GraveyardApp({
               Next 14 days
             </Button>
             <p className="text-xs text-muted-foreground">
-              {next14Days ? "Renewals and pause reminders, today through day 14." : "All Decide · the full decision queue."}
+              {next14Days ? "Renewals and reminders through day 14, plus overdue pending cancellations." : "All Decide · the full decision queue."}
             </p>
           </div>
         ) : null}
@@ -402,7 +416,7 @@ export function GraveyardApp({
             <p className="text-xs text-muted-foreground">Loading your list…</p>
           </div>
         ) : view === "cuts" ? (
-          <CutsSection rows={subscriptions} />
+          <CutsSection rows={subscriptions} today={today} onUpdate={updateCancellation} onEdit={openEdit} />
         ) : view === "decide" ? (
           subscriptions.length === 0 ? (
             <Empty className="border border-dashed py-16">
@@ -473,7 +487,7 @@ export function GraveyardApp({
             ) : null}
             <section className="grid grid-cols-2 gap-2 lg:grid-cols-4">
               <Stat label="Monthly burn" value={formatMoney(burn)} hint="Still paying" />
-              <Stat label="Cut this pass" value={formatMoney(cut)} hint="Burn dropped" />
+              <Stat label="Estimated savings" value={formatMoney(cut)} hint="Confirmed cancellations / mo" />
               <Link href={pathForView("decide")} className="rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30">
                 <Stat label="Decide-by" value={String(queue.length)} hint="Open Decide" />
               </Link>
@@ -614,7 +628,7 @@ function QueueSection({
     <section className="space-y-3" data-list="decide-by">
       <p className="hidden text-xs text-muted-foreground md:block">
         {next14Days
-          ? "Tools renewing in the next 14 days, including pauses with a renewal or reminder in this window."
+          ? "Tools renewing in the next 14 days, plus overdue pending cancellations and pauses with a reminder in this window."
           : "Renewing soon, last-used not set or stale, still undecided, and pauses that are due. One action per row."}
       </p>
       {rows.length === 0 ? (
@@ -689,7 +703,7 @@ function QueueSection({
                       <ReasonBadges row={row} today={today} />
                     </TableCell>
                     <TableCell className="text-right">
-                      {ritual ? (
+                      {ritual || cancellationPending(row) ? (
                         <DecisionActions
                           row={row}
                           onDecide={onDecide}
@@ -744,7 +758,7 @@ function QueueCard({
       <CardContent className="space-y-3">
         <ReasonBadges row={row} today={today} />
         <CancelLink row={row} ritual={ritual} />
-        {ritual ? (
+        {ritual || cancellationPending(row) ? (
           <HugeDecisionActions row={row} onDecide={onDecide} onUnpause={onUnpause} />
         ) : null}
         <Button size="sm" variant="ghost" className="h-8 px-0 text-muted-foreground" onClick={() => onEdit(row)}>
@@ -804,7 +818,7 @@ function InventorySection({
           </TableHeader>
           <TableBody>
             {rows.map((row) => (
-              <TableRow key={row.id} className={row.decision === "cut" ? "opacity-60" : undefined}>
+              <TableRow key={row.id} className={row.decision === "cut" && row.cancellationConfirmedAt ? "opacity-60" : undefined}>
                 <TableCell>
                   <NameCell row={row} ritual={ritual} />
                 </TableCell>
@@ -820,7 +834,7 @@ function InventorySection({
                 </TableCell>
                 <TableCell>
                   <div className="flex flex-col items-start gap-1.5">
-                    {decisionBadge(row.decision)}
+                    {decisionBadge(row)}
                     {row.decision === "pause" && row.remindAt ? (
                       <span className="text-[0.625rem] text-muted-foreground">
                         Remind {formatRelativeDay(row.remindAt, today)}
@@ -880,7 +894,7 @@ function InventoryCard({
   onUnpause: (id: string) => void
 }) {
   return (
-    <Card size="sm" className={row.decision === "cut" ? "opacity-70" : undefined}>
+    <Card size="sm" className={row.decision === "cut" && row.cancellationConfirmedAt ? "opacity-70" : undefined}>
       <CardHeader>
         <CardTitle className="flex items-center justify-between gap-2">
           <span className="flex min-w-0 items-center gap-2.5">
@@ -890,7 +904,7 @@ function InventoryCard({
           <span className="font-mono text-sm tabular-nums">{formatMoney(row.monthlyCost)}</span>
         </CardTitle>
         <CardDescription className="flex flex-wrap items-center gap-2">
-          {decisionBadge(row.decision)}
+          {decisionBadge(row)}
           <span>{row.category}</span>
           {row.decision === "pause" && row.remindAt ? (
             <span>Remind {formatRelativeDay(row.remindAt, today)}</span>
@@ -1007,6 +1021,7 @@ function HugeDecisionActions({
   onDecide: (id: string, decision: Decision) => void
   onUnpause: (id: string) => void
 }) {
+  if (cancellationPending(row)) return <Button asChild className="h-11 w-full"><Link href="/cuts">Finish cancellation</Link></Button>
   const paused = row.decision === "pause"
   return (
     <div className="grid grid-cols-3 gap-1.5">
@@ -1060,6 +1075,7 @@ function DecisionActions({
   onUnpause: (id: string) => void
   onEdit: (row: Subscription) => void
 }) {
+  if (cancellationPending(row)) return <Button asChild size="sm"><Link href="/cuts">Finish cancellation</Link></Button>
   return (
     <div className="flex flex-wrap justify-end gap-1">
       <Button size="sm" variant="outline" onClick={() => onDecide(row.id, "keep")}>

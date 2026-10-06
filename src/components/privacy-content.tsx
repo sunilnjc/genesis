@@ -32,7 +32,7 @@ export function PrivacyContent({ mobile = false }: { mobile?: boolean }) {
           <li>Email, so we can send a one-time sign-in code.</li>
           <li>
             The rows you type: tool name, monthly cost, renew date, last-used, cancel URL, and
-            keep / cut / pause.
+            keep / cut / pause, backup billing URL, and any cancellation confirmation date or note you add.
           </li>
           <li>Whether the seven-day ritual is open, and whether the $14 pack is paid.</li>
           <li>Optional feedback: name if you give one, email, and the note.</li>

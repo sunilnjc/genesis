@@ -6,7 +6,7 @@ export const LAST_USED_STALE_DAYS = 30
 export const PAUSE_REMIND_DAYS = 30
 
 export function isActive(sub: Subscription): boolean {
-  return sub.decision !== "cut"
+  return sub.decision !== "cut" || !sub.cancellationConfirmedAt
 }
 
 export function monthlyBurn(subscriptions: Subscription[]): number {
@@ -17,12 +17,16 @@ export function monthlyBurn(subscriptions: Subscription[]): number {
 
 export function cutThisPass(subscriptions: Subscription[]): number {
   return subscriptions
-    .filter((sub) => sub.decision === "cut")
+    .filter((sub) => sub.decision === "cut" && Boolean(sub.cancellationConfirmedAt))
     .reduce((sum, sub) => sum + sub.monthlyCost, 0)
 }
 
 export function queueReasons(sub: Subscription, today: string): QueueReason[] {
-  if (sub.decision === "cut") return []
+  if (sub.decision === "cut") {
+    if (sub.cancellationConfirmedAt) return []
+    const days = daysBetween(today, sub.renewDate)
+    return ["cancellation-pending", ...(days < 0 ? ["renew-passed" as const] : days <= RENEW_SOON_DAYS ? ["renewing-soon" as const] : [])]
+  }
 
   const reasons: QueueReason[] = []
   const daysToRenew = daysBetween(today, sub.renewDate)
@@ -57,7 +61,7 @@ export function queueReasons(sub: Subscription, today: string): QueueReason[] {
 }
 
 export function inDecideByQueue(sub: Subscription, today: string): boolean {
-  if (sub.decision === "cut") return false
+  if (sub.decision === "cut") return !sub.cancellationConfirmedAt
   if (sub.decision === "undecided") return true
   return queueReasons(sub, today).length > 0
 }
@@ -80,12 +84,13 @@ export function renewalWall(subscriptions: Subscription[], today: string): Subsc
   const end = addDays(today, RENEW_SOON_DAYS)
   const inWindow = (date: string | null) => Boolean(date && date >= today && date <= end)
   const nextDate = (row: Subscription) => {
-    const renewal = inWindow(row.renewDate) ? row.renewDate : end
+    const renewal = (row.decision === "cut" && row.renewDate < today) || inWindow(row.renewDate) ? row.renewDate : end
     return row.decision === "pause" && inWindow(row.remindAt)
       ? (row.remindAt! < renewal ? row.remindAt! : renewal)
       : renewal
   }
-  return subscriptions.filter(row => row.decision !== "cut" && (
+  return subscriptions.filter(row => isActive(row) && (
+    (row.decision === "cut" && row.renewDate < today) ||
     inWindow(row.renewDate) || (row.decision === "pause" && inWindow(row.remindAt))
   )).sort((a, b) => nextDate(a).localeCompare(nextDate(b)) || a.name.localeCompare(b.name))
 }
@@ -100,6 +105,8 @@ export function reasonLabel(reason: QueueReason): string {
       return "Last-used unknown"
     case "last-used-stale":
       return "Last-used stale"
+    case "cancellation-pending":
+      return "Cancellation pending"
     case "paused-due":
       return "Pause is due"
   }

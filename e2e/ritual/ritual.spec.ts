@@ -139,22 +139,25 @@ test.describe("signed-in ritual on ritestack.app", () => {
     await decideOn(page, KEEP, "Keep")
     await decideOn(page, PAUSE, "Pause")
 
-    const popupPromise = page.waitForEvent("popup")
     await decideOn(page, CUT, "Cut")
-    const popup = await popupPromise
-    await expect(popup).toHaveURL(/example\.com\/cancel\/cut/)
-    await popup.close()
+    await expect(page).toHaveURL(/\/cuts$/)
+    const receipt = page.locator("[data-cut-id]").filter({ hasText: CUT })
+    await expect(receipt.getByText("Cancellation pending", { exact: true })).toBeVisible()
+    await receipt.getByRole("button", { name: "Confirm cancellation", exact: true }).click()
+    await receipt.getByRole("checkbox").check()
+    await receipt.getByRole("button", { name: "Save confirmation", exact: true }).click()
+    await expect(receipt.getByText("Cancellation confirmed", { exact: true })).toBeVisible()
 
     await page.getByRole("tab", { name: /^Inventory$/ }).click()
     await expect(page.locator("[data-view='inventory']")).toBeVisible()
     await expect(inventoryRow(page, KEEP).getByText("Keep", { exact: true })).toBeVisible()
     await expect(inventoryRow(page, PAUSE).getByText("Pause", { exact: true })).toBeVisible()
-    await expect(inventoryRow(page, CUT).getByText("Cut", { exact: true })).toBeVisible()
+    await expect(inventoryRow(page, CUT).getByText("Cancellation confirmed", { exact: true })).toBeVisible()
     await expect(inventoryRow(page, PAUSE).getByRole("button", { name: /^Unpause/ })).toBeVisible()
     await expect(inventoryRow(page, KEEP).getByRole("button", { name: /^Unpause/ })).toHaveCount(0)
     await expect(statsStrip(page).getByText("Monthly burn")).toBeVisible()
     await expect(statsStrip(page).locator("div").filter({ hasText: "Monthly burn" }).getByText("$33", { exact: true })).toBeVisible()
-    await expect(statsStrip(page).locator("div").filter({ hasText: "Cut this pass" }).getByText("$33", { exact: true })).toBeVisible()
+    await expect(statsStrip(page).locator("div").filter({ hasText: "Estimated savings" }).getByText("$33", { exact: true })).toBeVisible()
     await assertOnlyOwnRows(page)
 
     const unpaused = page.waitForResponse(
