@@ -143,7 +143,7 @@ test.describe("signed-in ritual on ritestack.app", () => {
     await expect(page).toHaveURL(/\/cuts$/)
     const receipt = page.locator("[data-cut-id]").filter({ hasText: CUT })
     await expect(receipt.getByText("Cancellation pending", { exact: true })).toBeVisible()
-    await receipt.getByRole("button", { name: "Confirm cancellation", exact: true }).click()
+    await receipt.getByRole("button", { name: "I’ve cancelled", exact: true }).click()
     await receipt.getByRole("checkbox").check()
     await receipt.getByRole("button", { name: "Save confirmation", exact: true }).click()
     await expect(receipt.getByText("Cancellation confirmed", { exact: true })).toBeVisible()
