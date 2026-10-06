@@ -70,12 +70,30 @@ function CancellationCard({ row, today, onUpdate, onEdit }: { row: Subscription;
         <div className="flex flex-wrap gap-2"><Badge variant={pending ? "destructive" : "outline"}>{pending ? "Cancellation pending" : "Cancellation confirmed"}</Badge>{row.isSample ? <Badge variant="outline">Sample</Badge> : null}</div>
         <p className="text-xs text-muted-foreground">{row.cutAt ? `Decided to cut ${formatDate(row.cutAt)}` : "Cut date not recorded"}</p>
         {pending ? <p role="status">{row.renewDate < today ? "Renewal date has passed. Check whether you were charged." : `Renewal ${formatRelativeDay(row.renewDate, today)} (${formatDate(row.renewDate)}).`} Confirm cancellation with the provider before your next charge.</p> : <><p>Confirmed by you on {formatDate(row.cancellationConfirmedAt!)}. RiteStack has not independently verified billing.</p>{row.cancellationNote ? <p className="break-words text-muted-foreground">{row.cancellationNote}</p> : null}</>}
-        <div className="flex flex-wrap gap-3 underline underline-offset-4">
+        {!pending ? <div className="flex flex-wrap gap-3 underline underline-offset-4">
           {cancelUrl ? <a href={cancelUrl} target="_blank" rel="noopener noreferrer">Open cancellation page</a> : <span className="no-underline text-muted-foreground">No cancellation link saved</span>}
           {backup ? <a href={backup} target="_blank" rel="noopener noreferrer">Backup billing page</a> : home ? <a href={home} target="_blank" rel="noopener noreferrer">Provider website</a> : null}
-        </div>
+        </div> : null}
         {pending ? <>
-          <details><summary className="cursor-pointer">Link changed or asks you to sign in?</summary><div className="space-y-3 pt-2 text-muted-foreground">
+          <div className="space-y-2">
+            {cancelUrl || backup ? (
+              <Button asChild className="h-11 w-full">
+                <a href={cancelUrl ?? backup!} target="_blank" rel="noopener noreferrer">
+                  {cancelUrl ? "Open cancellation page" : "Open billing page"}
+                </a>
+              </Button>
+            ) : <Button className="h-11 w-full" disabled={busy} onClick={() => onEdit(row)}>Add cancellation link</Button>}
+            <Button variant="ghost" className="h-11 w-full" disabled={busy}
+              aria-expanded={confirming} aria-controls={`confirmation-${row.id}`}
+              onClick={() => setConfirming(!confirming)}>I’ve cancelled</Button>
+          </div>
+          <details className="border-t pt-2">
+            <summary className="flex min-h-11 cursor-pointer items-center text-muted-foreground">More options</summary>
+            <div className="space-y-4 pt-2 text-muted-foreground">
+              <div className="flex flex-col items-start gap-3 underline underline-offset-4">
+                {backup ? <a href={backup} target="_blank" rel="noopener noreferrer">Backup billing page</a> : home ? <a href={home} target="_blank" rel="noopener noreferrer">Provider website</a> : null}
+              </div>
+              <p className="font-medium text-foreground">Link changed or asks you to sign in?</p>
             <p>Sign in to the provider, open Account or Settings → Billing / Subscription, and finish cancellation. If you subscribed through Apple or Google, manage it in that store. Save the provider’s confirmation; contact their support if cancellation is unavailable.</p>
             <Label htmlFor={`billing-${row.id}`}>Backup billing/settings URL (optional)</Label>
             <Input id={`billing-${row.id}`} type="url" value={billingUrl} onChange={event => setBillingUrl(event.target.value)} placeholder="https://provider.example/billing" disabled={busy} />
@@ -85,10 +103,13 @@ function CancellationCard({ row, today, onUpdate, onEdit }: { row: Subscription;
               void save({ billingUrl: value })
             }}>Save backup URL</Button>
             <Button variant="ghost" disabled={busy} onClick={() => onEdit(row)}>Edit cancellation link or renewal date</Button>
-          </div></details>
-          <div className="flex flex-wrap gap-2"><Button disabled={busy} onClick={() => setConfirming(!confirming)}>Confirm cancellation</Button><Button variant="outline" disabled={busy} onClick={downloadReminder}>Add calendar reminder</Button></div>
-          <p className="text-xs text-muted-foreground">Reminders appear in Decide before renewal. Import the calendar file for a notification outside RiteStack. No reminder emails are sent. Remove imported reminders after confirming cancellation.</p>
-          {confirming ? <form className="space-y-3 rounded-lg border p-3" onSubmit={event => {
+              <div className="space-y-2 border-t pt-3">
+                <Button variant="outline" className="h-11" disabled={busy} onClick={downloadReminder}>Add calendar reminder</Button>
+                <p className="text-xs">Reminders appear in Decide before renewal. Import the calendar file for a notification outside RiteStack. No reminder emails are sent. Remove imported reminders after confirming cancellation.</p>
+              </div>
+            </div>
+          </details>
+          {confirming ? <form id={`confirmation-${row.id}`} className="space-y-3 rounded-lg border p-3" onSubmit={event => {
             event.preventDefault()
             try { const next = confirmCancellation(row, date, note, today); void save({ cancellationConfirmedAt: next.cancellationConfirmedAt, cancellationNote: next.cancellationNote }) }
             catch (failure) { setError(failure instanceof Error ? failure.message : "Check your confirmation details.") }
