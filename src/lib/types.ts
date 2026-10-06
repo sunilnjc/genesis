@@ -19,6 +19,7 @@ export type QueueReason =
   | "last-used-unknown"
   | "last-used-stale"
   | "paused-due"
+  | "cancellation-pending"
 
 export type Subscription = {
   id: string
@@ -32,6 +33,9 @@ export type Subscription = {
   remindAt: string | null
   isSample: boolean
   cutAt: string | null
+  cancellationConfirmedAt?: string | null
+  cancellationNote?: string
+  billingUrl?: string
   createdAt: string
   updatedAt: string
 }

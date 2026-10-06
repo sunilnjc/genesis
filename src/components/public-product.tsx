@@ -30,7 +30,7 @@ export function PublicProduct({ children }: { children: ReactNode }) {
         {[
           ["1. Add your stack", "Type the tools you pay for, the monthly cost, and the next renewal. Set last-used yourself, or leave it unknown."],
           ["2. Keep, cut, or pause", "Review your tools in Decide. Keep what you use, record a cut, or pause with a reminder in 30 days. Complete cancellations on the provider’s site."],
-          ["3. See what changed", "Inventory shows your full list and monthly burn. Cuts keeps the tools you cut, their cut dates, and cancel links. Viewing your stack stays free."],
+          ["3. See what changed", "Inventory shows your full list and monthly burn. Cuts tracks pending cancellations, backup links, and your confirmation. Estimated savings count confirmed cancellations only. Viewing your stack stays free."],
         ].map(([title, body]) => (
           <article key={title} className="space-y-3 rounded-xl border border-foreground/10 bg-card p-5">
             <h2 className="text-base font-medium">{title}</h2>
